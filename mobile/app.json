@@ -2,7 +2,7 @@
   "expo": {
     "name": "知音漫客收藏册",
     "slug": "comic-guests",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -13,11 +13,13 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "buildNumber": "2",
       "bundleIdentifier": "com.comicguests.app",
       "supportsTablet": true
     },
     "android": {
       "package": "com.comicguests.app",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

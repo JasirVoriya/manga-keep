@@ -10,7 +10,7 @@
 
 ### 方式 A：GitHub Actions 远程打 APK + 未签名 IPA
 
-这个方式不需要本机安装 Android Studio、Xcode，也不需要登录 EAS。Android 会产出可直接安装的 APK；iOS 会产出未签名 IPA，用于后续签名或归档，不能直接安装到真机。
+这个方式不需要本机安装 Android Studio、Xcode，也不需要登录 EAS。Android 和 iOS 会并行构建：Android 会产出可直接安装的 Release APK；iOS 会产出未签名 IPA，用于后续签名或归档，不能直接安装到真机。
 
 1. 推送代码到 GitHub。
 2. 打开 GitHub 仓库的 `Actions` 页面。
@@ -23,7 +23,7 @@ comic-guests-v1.0.0.apk
 comic-guests-v1.0.0-unsigned.ipa
 ```
 
-该 APK 是 GitHub Actions 生成的可安装 Android 包，适合自己安装测试和小范围分发。未签名 IPA 需要 Apple 证书和描述文件重新签名后，才能通过侧载、Ad Hoc、TestFlight 或其他 iOS 分发方式安装。
+该 APK 是 GitHub Actions 生成的 Release 包，已经内置 JS bundle，适合自己安装测试和小范围分发。未签名 IPA 需要 Apple 证书和描述文件重新签名后，才能通过侧载、Ad Hoc、TestFlight 或其他 iOS 分发方式安装。
 
 ### 方式 B：EAS 云构建
 

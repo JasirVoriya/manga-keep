@@ -6,12 +6,7 @@ on:
       version:
         description: "Release tag, for example v1.0.0"
         required: true
-        default: "v1.0.0"
-      build_ios:
-        description: "Build unsigned iOS IPA too. It is for later signing, not direct device install."
-        required: true
-        type: boolean
-        default: true
+        default: "v1.0.1"
 
 permissions:
   contents: write
@@ -47,32 +42,24 @@ jobs:
 
       - name: Generate Android native project
         working-directory: mobile
-        run: npx expo prebuild --platform android --clean --non-interactive
+        run: npx expo prebuild --platform android --clean
 
-      - name: Build installable APK
+      - name: Build release APK
         working-directory: mobile/android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleRelease
 
       - name: Prepare artifact
         run: |
           mkdir -p dist
-          cp mobile/android/app/build/outputs/apk/debug/app-debug.apk "dist/comic-guests-${{ inputs.version }}.apk"
+          cp mobile/android/app/build/outputs/apk/release/app-release.apk "dist/comic-guests-${{ inputs.version }}.apk"
 
-      - name: Publish GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release delete "${{ inputs.version }}" --yes || true
-          git tag -f "${{ inputs.version }}"
-          git push origin "${{ inputs.version }}" --force
-          gh release create "${{ inputs.version }}" \
-            "dist/comic-guests-${{ inputs.version }}.apk" \
-            --title "Comic Guests ${{ inputs.version }}" \
-            --notes "Android installable APK built by GitHub Actions. This APK is for direct installation on Android devices."
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: dist/comic-guests-${{ inputs.version }}.apk
 
   build-ios-unsigned-ipa:
-    if: ${{ inputs.build_ios }}
-    needs: build-android-apk
     runs-on: macos-15
 
     steps:
@@ -102,7 +89,7 @@ jobs:
 
       - name: Generate iOS native project
         working-directory: mobile
-        run: npx expo prebuild --platform ios --clean --non-interactive
+        run: npx expo prebuild --platform ios --clean
 
       - name: Install CocoaPods
         working-directory: mobile/ios
@@ -141,8 +128,37 @@ jobs:
           mkdir -p dist
           (cd "$RUNNER_TEMP" && zip -qry "$GITHUB_WORKSPACE/mobile/dist/comic-guests-${{ inputs.version }}-unsigned.ipa" Payload)
 
-      - name: Upload unsigned IPA to GitHub Release
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: mobile/dist/comic-guests-${{ inputs.version }}-unsigned.ipa
+
+  publish-release:
+    needs:
+      - build-android-apk
+      - build-ios-unsigned-ipa
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "${{ inputs.version }}" "mobile/dist/comic-guests-${{ inputs.version }}-unsigned.ipa" --clobber
+          gh release delete "${{ inputs.version }}" --yes --cleanup-tag || true
+          git tag -f "${{ inputs.version }}"
+          git push origin "${{ inputs.version }}" --force
+
+          mapfile -t ASSETS < <(find dist -type f \( -name "*.apk" -o -name "*.ipa" \) -print | sort)
+
+          gh release create "${{ inputs.version }}" "${ASSETS[@]}" \
+            --title "Comic Guests ${{ inputs.version }}" \
+            --notes "Android release APK and unsigned iOS IPA built by GitHub Actions. The APK can be installed directly on Android. The IPA is unsigned and must be signed before installing on iOS devices."
