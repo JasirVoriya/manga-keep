@@ -1,0 +1,148 @@
+name: Build Mobile Release Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag, for example v1.0.0"
+        required: true
+        default: "v1.0.0"
+      build_ios:
+        description: "Build unsigned iOS IPA too. It is for later signing, not direct device install."
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Type check
+        working-directory: mobile
+        run: npx tsc --noEmit
+
+      - name: Generate Android native project
+        working-directory: mobile
+        run: npx expo prebuild --platform android --clean --non-interactive
+
+      - name: Build installable APK
+        working-directory: mobile/android
+        run: ./gradlew assembleDebug
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p dist
+          cp mobile/android/app/build/outputs/apk/debug/app-debug.apk "dist/comic-guests-${{ inputs.version }}.apk"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete "${{ inputs.version }}" --yes || true
+          git tag -f "${{ inputs.version }}"
+          git push origin "${{ inputs.version }}" --force
+          gh release create "${{ inputs.version }}" \
+            "dist/comic-guests-${{ inputs.version }}.apk" \
+            --title "Comic Guests ${{ inputs.version }}" \
+            --notes "Android installable APK built by GitHub Actions. This APK is for direct installation on Android devices."
+
+  build-ios-unsigned-ipa:
+    if: ${{ inputs.build_ios }}
+    needs: build-android-apk
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Type check
+        working-directory: mobile
+        run: npx tsc --noEmit
+
+      - name: Generate iOS native project
+        working-directory: mobile
+        run: npx expo prebuild --platform ios --clean --non-interactive
+
+      - name: Install CocoaPods
+        working-directory: mobile/ios
+        run: pod install
+
+      - name: Build unsigned iOS app
+        working-directory: mobile
+        run: |
+          WORKSPACE=$(find ios -maxdepth 1 -name "*.xcworkspace" -print -quit)
+          SCHEME=$(xcodebuild -list -json -workspace "$WORKSPACE" | ruby -rjson -e 'puts JSON.parse(STDIN.read)["workspace"]["schemes"].first')
+
+          echo "Using workspace: $WORKSPACE"
+          echo "Using scheme: $SCHEME"
+
+          xcodebuild build \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination generic/platform=iOS \
+            -derivedDataPath "$RUNNER_TEMP/ios-build" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package unsigned IPA
+        working-directory: mobile
+        run: |
+          APP_PATH=$(find "$RUNNER_TEMP/ios-build/Build/Products/Release-iphoneos" -maxdepth 1 -name "*.app" -type d -print -quit)
+          test -n "$APP_PATH" || (echo "No .app bundle found" && exit 1)
+
+          rm -rf "$RUNNER_TEMP/Payload"
+          mkdir -p "$RUNNER_TEMP/Payload"
+          cp -R "$APP_PATH" "$RUNNER_TEMP/Payload/"
+
+          mkdir -p dist
+          (cd "$RUNNER_TEMP" && zip -qry "$GITHUB_WORKSPACE/mobile/dist/comic-guests-${{ inputs.version }}-unsigned.ipa" Payload)
+
+      - name: Upload unsigned IPA to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ inputs.version }}" "mobile/dist/comic-guests-${{ inputs.version }}-unsigned.ipa" --clobber

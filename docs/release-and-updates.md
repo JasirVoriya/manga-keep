@@ -8,6 +8,25 @@
 
 ## Android 发布流程
 
+### 方式 A：GitHub Actions 远程打 APK + 未签名 IPA
+
+这个方式不需要本机安装 Android Studio、Xcode，也不需要登录 EAS。Android 会产出可直接安装的 APK；iOS 会产出未签名 IPA，用于后续签名或归档，不能直接安装到真机。
+
+1. 推送代码到 GitHub。
+2. 打开 GitHub 仓库的 `Actions` 页面。
+3. 选择 `Build Mobile Release Packages`。
+4. 点击 `Run workflow`，输入版本号，例如 `v1.0.0`，并保持 `build_ios` 开启。
+5. 等待任务完成后，在仓库 `Releases` 页面下载：
+
+```text
+comic-guests-v1.0.0.apk
+comic-guests-v1.0.0-unsigned.ipa
+```
+
+该 APK 是 GitHub Actions 生成的可安装 Android 包，适合自己安装测试和小范围分发。未签名 IPA 需要 Apple 证书和描述文件重新签名后，才能通过侧载、Ad Hoc、TestFlight 或其他 iOS 分发方式安装。
+
+### 方式 B：EAS 云构建
+
 1. 安装并登录 EAS CLI：
 
 ```bash
