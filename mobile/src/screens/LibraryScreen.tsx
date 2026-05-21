@@ -16,12 +16,14 @@ import {
   type NativeTouchEvent,
 } from 'react-native';
 import { AnimatedMangaDecor } from '../components/AnimatedMangaDecor';
+import { CatalogSwitcher } from '../components/CatalogSwitcher';
 import { IssueCard } from '../components/IssueCard';
 import { IssueDetailModal } from '../components/IssueDetailModal';
 import { MascotSticker } from '../components/MascotSticker';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { UpdatePromptModal } from '../components/UpdatePromptModal';
-import { issues, TOTAL_ISSUES } from '../data/issues';
+import { defaultCatalog } from '../data/catalogs';
+import { loadConfiguredCatalogs } from '../data/catalogRegistry';
 import {
   defaultRecord,
   exportRecords,
@@ -32,7 +34,7 @@ import {
   saveRecords,
 } from '../storage/collectionStorage';
 import { colors, radii } from '../styles/theme';
-import type { ComicIssue, ComicIssueKey, IssueFilter, IssueRecordMap, OwnershipStatus } from '../types';
+import type { ComicCatalog, ComicIssue, ComicIssueKey, IssueFilter, IssueRecordMap, OwnershipStatus } from '../types';
 import { checkForAppUpdate, type AppUpdateInfo } from '../update/versionCheck';
 
 const filterOptions: Array<{ label: string; value: IssueFilter }> = [
@@ -56,6 +58,9 @@ function distance(touches: NativeTouchEvent['touches']) {
 export function LibraryScreen() {
   const { width } = useWindowDimensions();
   const [records, setRecords] = useState<IssueRecordMap>({});
+  const [catalogs, setCatalogs] = useState<ComicCatalog[]>([defaultCatalog]);
+  const [selectedCatalogId, setSelectedCatalogId] = useState(defaultCatalog.id);
+  const [catalogLoadFailed, setCatalogLoadFailed] = useState(false);
   const [columns, setColumns] = useState(4);
   const [filter, setFilter] = useState<IssueFilter>('all');
   const [query, setQuery] = useState('');
@@ -70,6 +75,36 @@ export function LibraryScreen() {
 
   useEffect(() => {
     loadRecords().then(setRecords);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadConfiguredCatalogs()
+      .then((loadedCatalogs) => {
+        if (cancelled) {
+          return;
+        }
+        setCatalogs(loadedCatalogs);
+        setSelectedCatalogId((currentId) => {
+          if (loadedCatalogs.some((catalog) => catalog.id === currentId)) {
+            return currentId;
+          }
+          return loadedCatalogs[0]?.id ?? defaultCatalog.id;
+        });
+        setCatalogLoadFailed(false);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCatalogs([defaultCatalog]);
+          setSelectedCatalogId(defaultCatalog.id);
+          setCatalogLoadFailed(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -89,20 +124,28 @@ export function LibraryScreen() {
     };
   }, []);
 
+  const currentCatalog = useMemo(
+    () => catalogs.find((catalog) => catalog.id === selectedCatalogId) ?? catalogs[0] ?? defaultCatalog,
+    [catalogs, selectedCatalogId],
+  );
+
+  const currentIssues = currentCatalog.issues;
+  const totalIssues = currentCatalog.issueCount;
+
   const stats = useMemo(() => {
-    const owned = issues.filter((issue) => records[issue.key]?.status === 'owned').length;
-    const wishlist = issues.filter((issue) => records[issue.key]?.status === 'wishlist').length;
+    const owned = currentIssues.filter((issue) => records[issue.key]?.status === 'owned').length;
+    const wishlist = currentIssues.filter((issue) => records[issue.key]?.status === 'wishlist').length;
     return {
       owned,
       wishlist,
-      missing: TOTAL_ISSUES - owned,
-      percent: Math.round((owned / TOTAL_ISSUES) * 100),
+      missing: totalIssues - owned,
+      percent: totalIssues > 0 ? Math.round((owned / totalIssues) * 100) : 0,
     };
-  }, [records]);
+  }, [currentIssues, records, totalIssues]);
 
   const filteredIssues = useMemo(() => {
     const normalizedQuery = query.trim();
-    return issues.filter((issue) => {
+    return currentIssues.filter((issue) => {
       const record = records[issue.key] ?? defaultRecord;
       const matchesFilter = filter === 'all' || record.status === filter;
       const matchesQuery =
@@ -111,7 +154,7 @@ export function LibraryScreen() {
         issue.label.includes(normalizedQuery);
       return matchesFilter && matchesQuery;
     });
-  }, [filter, query, records]);
+  }, [currentIssues, filter, query, records]);
 
   const maxContentWidth = 1040;
   const contentWidth = Math.min(width, maxContentWidth);
@@ -167,7 +210,7 @@ export function LibraryScreen() {
 
     let nextRecords = records;
     selectedIssueKeys.forEach((issueKey) => {
-      const issue = issues.find((candidate) => candidate.key === issueKey);
+      const issue = currentIssues.find((candidate) => candidate.key === issueKey);
       if (!issue) {
         return;
       }
@@ -221,8 +264,8 @@ export function LibraryScreen() {
       <View style={styles.shell}>
         <View style={styles.header}>
           <View style={styles.titleBlock}>
-            <Text style={styles.eyebrow}>纸刊收藏记录</Text>
-            <Text style={styles.appName}>知音漫客收藏册</Text>
+            <Text style={styles.eyebrow}>漫画收藏记录</Text>
+            <Text style={styles.appName}>{currentCatalog.name}</Text>
           </View>
           <Pressable
             accessibilityRole="button"
@@ -243,7 +286,7 @@ export function LibraryScreen() {
             <Text style={styles.progressCaption}>收集完成</Text>
           </View>
           <View style={styles.statColumn}>
-            <Text style={styles.statLine}>已有 {stats.owned} / {TOTAL_ISSUES}</Text>
+            <Text style={styles.statLine}>已有 {stats.owned} / {totalIssues}</Text>
             <Text style={styles.statLine}>缺本 {stats.missing} · 蹲守 {stats.wishlist}</Text>
           </View>
           <View style={styles.progressTrack}>
@@ -252,6 +295,19 @@ export function LibraryScreen() {
         </View>
 
         <View style={styles.controls}>
+          <CatalogSwitcher
+            catalogs={catalogs}
+            selectedCatalogId={currentCatalog.id}
+            onSelectCatalog={(catalogId) => {
+              setSelectedCatalogId(catalogId);
+              setSelectedIssue(null);
+              setSelectedIssueKeys(new Set());
+              setBatchMode(false);
+            }}
+          />
+          {catalogLoadFailed && (
+            <Text style={styles.catalogWarning}>远程漫画目录暂时不可用，正在使用内置目录。</Text>
+          )}
           <View style={styles.searchRow}>
             <View style={styles.searchBox}>
               <MaterialCommunityIcons name="magnify" size={19} color={colors.muted} />
@@ -344,8 +400,8 @@ export function LibraryScreen() {
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Image source={readerGirl} resizeMode="contain" style={styles.emptyImage} />
-                <Text style={styles.emptyTitle}>没有匹配的期刊</Text>
-                <Text style={styles.emptyText}>换一个期号或筛选条件，再查一次。</Text>
+                <Text style={styles.emptyTitle}>没有匹配的漫画</Text>
+                <Text style={styles.emptyText}>换一个编号或筛选条件，再查一次。</Text>
               </View>
             }
             renderItem={({ item }) => (
@@ -577,6 +633,12 @@ const styles = StyleSheet.create({
   },
   catalogLine: {
     color: colors.muted,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  catalogWarning: {
+    marginBottom: 10,
+    color: colors.redDark,
     fontSize: 12,
     fontWeight: '800',
   },
