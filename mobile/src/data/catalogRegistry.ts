@@ -7,9 +7,14 @@ import type {
   RemoteComicCatalogRegistryEntry,
   RemoteComicIssue,
 } from '../types';
+import {
+  createNumberedComicIssues,
+  DEFAULT_CATALOG_NUMBER_PADDING,
+  formatIssueNumber,
+  makeIssueKey,
+} from './catalogHelpers';
 
 const MAX_REGISTRY_REDIRECTS = 3;
-const DEFAULT_CATALOG_NUMBER_PADDING = 3;
 
 type AppExtra = {
   catalogRegistryUrl?: string;
@@ -31,12 +36,31 @@ function isCatalogKind(value: unknown): value is ComicCatalogKind {
   return typeof value === 'string' && catalogKinds.includes(value as ComicCatalogKind);
 }
 
+function isOptionalString(record: Record<string, unknown>, key: string) {
+  return !(key in record) || typeof record[key] === 'string';
+}
+
+function isOptionalPositiveInteger(record: Record<string, unknown>, key: string) {
+  return (
+    !(key in record) ||
+    (typeof record[key] === 'number' && Number.isInteger(record[key]) && record[key] > 0)
+  );
+}
+
 function isRemoteIssue(value: unknown): value is RemoteComicIssue {
   if (!isRecord(value)) {
     return false;
   }
 
-  return typeof value.number === 'number' && Number.isInteger(value.number) && value.number > 0;
+  return (
+    typeof value.number === 'number' &&
+    Number.isInteger(value.number) &&
+    value.number > 0 &&
+    isOptionalPositiveInteger(value, 'sortNumber') &&
+    isOptionalString(value, 'label') &&
+    isOptionalString(value, 'displayTitle') &&
+    isOptionalString(value, 'coverUrl')
+  );
 }
 
 function isRegistryEntry(value: unknown): value is RemoteComicCatalogRegistryEntry {
@@ -83,6 +107,11 @@ export function isRemoteCatalogManifest(value: unknown): value is RemoteComicCat
     typeof value.issueCount === 'number' &&
     Number.isInteger(value.issueCount) &&
     value.issueCount > 0 &&
+    isOptionalString(value, 'shortName') &&
+    isOptionalString(value, 'description') &&
+    isOptionalString(value, 'coverBaseUrl') &&
+    isOptionalString(value, 'coverPattern') &&
+    isOptionalPositiveInteger(value, 'numberPadding') &&
     (!('issues' in value) || (Array.isArray(value.issues) && value.issues.every(isRemoteIssue)))
   );
 }
@@ -237,39 +266,6 @@ function applyRemoteIssueOverrides(
     label: remoteIssue.label ?? `第${padded}期`,
     displayTitle: remoteIssue.displayTitle ?? `${catalogName} ${padded}`,
   };
-}
-
-function createNumberedComicIssues(options: {
-  catalogId: string;
-  catalogName: string;
-  issueCount: number;
-  numberPadding?: number;
-  coverUrlForIssue?: (issueNumber: number, paddedIssueNumber: string) => string | undefined;
-}) {
-  const padding = options.numberPadding ?? DEFAULT_CATALOG_NUMBER_PADDING;
-
-  return Array.from({ length: options.issueCount }, (_, index): ComicIssue => {
-    const number = index + 1;
-    const padded = formatIssueNumber(number, padding);
-
-    return {
-      key: makeIssueKey(options.catalogId, number),
-      catalogId: options.catalogId,
-      number,
-      sortNumber: number,
-      label: `第${padded}期`,
-      displayTitle: `${options.catalogName} ${padded}`,
-      coverUrl: options.coverUrlForIssue?.(number, padded),
-    };
-  });
-}
-
-function makeIssueKey(catalogId: string, issueNumber: number) {
-  return `${catalogId}:${issueNumber}` as const;
-}
-
-function formatIssueNumber(issueNumber: number, padding = DEFAULT_CATALOG_NUMBER_PADDING) {
-  return issueNumber.toString().padStart(padding, '0');
 }
 
 function normalizeRegistry(registry: RemoteComicCatalogRegistry, registryUrl: string): RemoteComicCatalogRegistry {

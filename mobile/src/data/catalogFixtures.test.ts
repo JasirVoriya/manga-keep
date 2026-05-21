@@ -1,17 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-declare const require: {
-  extensions: Record<string, (module: { exports: unknown }) => void>;
-};
-
-require.extensions['.jpg'] = (module) => {
-  module.exports = 'test-image';
-};
+import { createNumberedComicIssues, makeIssueKey } from './catalogHelpers';
 
 describe('catalog helpers', () => {
-  it('creates stable issue keys', async () => {
-    const { createNumberedComicIssues, makeIssueKey } = await import('./catalogs');
+  it('creates stable issue keys', () => {
     const issues = createNumberedComicIssues({
       catalogId: 'demo',
       catalogName: '测试漫画',
