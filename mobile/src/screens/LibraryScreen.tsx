@@ -80,7 +80,7 @@ export function LibraryScreen() {
   useEffect(() => {
     let cancelled = false;
 
-    loadConfiguredCatalogs()
+    loadConfiguredCatalogs({ fallbackToBundled: false })
       .then((loadedCatalogs) => {
         if (cancelled) {
           return;
