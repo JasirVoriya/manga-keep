@@ -74,6 +74,8 @@ function isRegistryEntry(value: unknown): value is RemoteComicCatalogRegistryEnt
     typeof value.name === 'string' &&
     value.name.trim().length > 0 &&
     isCatalogKind(value.kind) &&
+    isOptionalString(value, 'shortName') &&
+    isOptionalString(value, 'description') &&
     typeof value.manifestUrl === 'string' &&
     value.manifestUrl.trim().length > 0
   );

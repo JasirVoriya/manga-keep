@@ -35,6 +35,25 @@ describe('remote catalog registry parsing', () => {
     );
   });
 
+  it('rejects catalog entries with invalid optional fields', () => {
+    assert.equal(
+      isRemoteCatalogRegistry({
+        schemaVersion: 1,
+        catalogs: [
+          {
+            id: 'bad',
+            name: 'Bad',
+            shortName: 123,
+            kind: 'magazine',
+            description: false,
+            manifestUrl: 'https://example.com/catalogs/bad/manifest.v1.json',
+          },
+        ],
+      }),
+      false,
+    );
+  });
+
   it('converts a remote manifest into stable issue records with generated covers', () => {
     const catalog = remoteManifestToCatalog(
       {
