@@ -70,6 +70,7 @@ export function LibraryScreen() {
   const [backupText, setBackupText] = useState('');
   const [toolsOpen, setToolsOpen] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
+  const selectedCatalogIdRef = useRef(selectedCatalogId);
   const pinchStartDistance = useRef(0);
   const pinchStartColumns = useRef(4);
 
@@ -92,26 +93,25 @@ export function LibraryScreen() {
           return;
         }
         setCatalogs(loadedCatalogs);
-        setSelectedCatalogId((currentId) => {
-          const nextSelectedId = loadedCatalogs.some((catalog) => catalog.id === currentId)
-            ? currentId
-            : loadedCatalogs[0]?.id ?? defaultCatalog.id;
-          if (nextSelectedId !== currentId) {
-            resetCatalogSelectionState();
-          }
-          return nextSelectedId;
-        });
+        const currentId = selectedCatalogIdRef.current;
+        const nextSelectedId = loadedCatalogs.some((catalog) => catalog.id === currentId)
+          ? currentId
+          : loadedCatalogs[0]?.id ?? defaultCatalog.id;
+        if (nextSelectedId !== currentId) {
+          resetCatalogSelectionState();
+          selectedCatalogIdRef.current = nextSelectedId;
+          setSelectedCatalogId(nextSelectedId);
+        }
         setCatalogLoadFailed(false);
       })
       .catch(() => {
         if (!cancelled) {
           setCatalogs([defaultCatalog]);
-          setSelectedCatalogId((currentId) => {
-            if (currentId !== defaultCatalog.id) {
-              resetCatalogSelectionState();
-            }
-            return defaultCatalog.id;
-          });
+          if (selectedCatalogIdRef.current !== defaultCatalog.id) {
+            resetCatalogSelectionState();
+            selectedCatalogIdRef.current = defaultCatalog.id;
+            setSelectedCatalogId(defaultCatalog.id);
+          }
           setCatalogLoadFailed(true);
         }
       });
@@ -313,6 +313,10 @@ export function LibraryScreen() {
             catalogs={catalogs}
             selectedCatalogId={currentCatalog.id}
             onSelectCatalog={(catalogId) => {
+              if (catalogId === currentCatalog.id) {
+                return;
+              }
+              selectedCatalogIdRef.current = catalogId;
               setSelectedCatalogId(catalogId);
               resetCatalogSelectionState();
             }}
