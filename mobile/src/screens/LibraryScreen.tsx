@@ -77,6 +77,12 @@ export function LibraryScreen() {
     loadRecords().then(setRecords);
   }, []);
 
+  function resetCatalogSelectionState() {
+    setSelectedIssue(null);
+    setSelectedIssueKeys(new Set());
+    setBatchMode(false);
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -87,17 +93,25 @@ export function LibraryScreen() {
         }
         setCatalogs(loadedCatalogs);
         setSelectedCatalogId((currentId) => {
-          if (loadedCatalogs.some((catalog) => catalog.id === currentId)) {
-            return currentId;
+          const nextSelectedId = loadedCatalogs.some((catalog) => catalog.id === currentId)
+            ? currentId
+            : loadedCatalogs[0]?.id ?? defaultCatalog.id;
+          if (nextSelectedId !== currentId) {
+            resetCatalogSelectionState();
           }
-          return loadedCatalogs[0]?.id ?? defaultCatalog.id;
+          return nextSelectedId;
         });
         setCatalogLoadFailed(false);
       })
       .catch(() => {
         if (!cancelled) {
           setCatalogs([defaultCatalog]);
-          setSelectedCatalogId(defaultCatalog.id);
+          setSelectedCatalogId((currentId) => {
+            if (currentId !== defaultCatalog.id) {
+              resetCatalogSelectionState();
+            }
+            return defaultCatalog.id;
+          });
           setCatalogLoadFailed(true);
         }
       });
@@ -300,9 +314,7 @@ export function LibraryScreen() {
             selectedCatalogId={currentCatalog.id}
             onSelectCatalog={(catalogId) => {
               setSelectedCatalogId(catalogId);
-              setSelectedIssue(null);
-              setSelectedIssueKeys(new Set());
-              setBatchMode(false);
+              resetCatalogSelectionState();
             }}
           />
           {catalogLoadFailed && (

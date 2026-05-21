@@ -23,6 +23,7 @@ export function CatalogSwitcher({ catalogs, selectedCatalogId, onSelectCatalog }
               key={catalog.id}
               accessibilityRole="button"
               accessibilityLabel={`切换到${catalog.name}`}
+              accessibilityState={{ selected }}
               onPress={() => onSelectCatalog(catalog.id)}
               style={[styles.tab, selected && styles.selectedTab]}
             >

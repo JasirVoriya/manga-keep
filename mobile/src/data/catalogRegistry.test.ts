@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
   isRemoteCatalogManifest,
   isRemoteCatalogRegistry,
+  isPlaceholderCatalogRegistryUrl,
   remoteManifestToCatalog,
   resolveRemoteUrl,
 } from './catalogRegistry';
@@ -177,5 +178,12 @@ describe('remote catalog registry parsing', () => {
       resolveRemoteUrl('../catalogs/demo/manifest.v1.json', 'https://example.com/registry/index.v1.json'),
       'https://example.com/catalogs/demo/manifest.v1.json',
     );
+  });
+
+  it('treats obvious registry URL placeholders as unconfigured', () => {
+    assert.equal(isPlaceholderCatalogRegistryUrl(''), true);
+    assert.equal(isPlaceholderCatalogRegistryUrl('   '), true);
+    assert.equal(isPlaceholderCatalogRegistryUrl('https://raw.githubusercontent.com/YOUR_NAME/catalogs/main/index.json'), true);
+    assert.equal(isPlaceholderCatalogRegistryUrl('https://example.com/catalogs/index.json'), false);
   });
 });

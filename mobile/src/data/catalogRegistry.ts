@@ -123,8 +123,14 @@ export function getBundledCatalogRegistryUrl() {
   return extra?.catalogRegistryUrl?.trim() ?? '';
 }
 
+export function isPlaceholderCatalogRegistryUrl(url: string) {
+  const normalizedUrl = url.trim();
+  return normalizedUrl.length === 0 || normalizedUrl.includes('YOUR_NAME');
+}
+
 export function getCatalogRegistryUrl() {
-  return getBundledCatalogRegistryUrl();
+  const registryUrl = getBundledCatalogRegistryUrl();
+  return isPlaceholderCatalogRegistryUrl(registryUrl) ? '' : registryUrl;
 }
 
 export function resolveRemoteUrl(url: string, baseUrl: string) {
