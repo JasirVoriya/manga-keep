@@ -1,11 +1,3 @@
-import Constants from 'expo-constants';
-import {
-  comicCatalogs,
-  createNumberedComicIssues,
-  DEFAULT_CATALOG_NUMBER_PADDING,
-  formatIssueNumber,
-  makeIssueKey,
-} from './catalogs';
 import type {
   ComicCatalog,
   ComicCatalogKind,
@@ -17,9 +9,16 @@ import type {
 } from '../types';
 
 const MAX_REGISTRY_REDIRECTS = 3;
+const DEFAULT_CATALOG_NUMBER_PADDING = 3;
 
 type AppExtra = {
   catalogRegistryUrl?: string;
+};
+
+type ExpoConstants = {
+  expoConfig?: {
+    extra?: unknown;
+  };
 };
 
 const catalogKinds: ComicCatalogKind[] = ['magazine', 'series', 'one-shot', 'artbook', 'special'];
@@ -89,7 +88,7 @@ export function isRemoteCatalogManifest(value: unknown): value is RemoteComicCat
 }
 
 export function getBundledCatalogRegistryUrl() {
-  const extra = Constants.expoConfig?.extra as AppExtra | undefined;
+  const extra = getExpoConstants().expoConfig?.extra as AppExtra | undefined;
   return extra?.catalogRegistryUrl?.trim() ?? '';
 }
 
@@ -142,23 +141,25 @@ export async function loadConfiguredCatalogs(options: { fallbackToBundled?: bool
   const fallbackToBundled = options.fallbackToBundled ?? true;
 
   if (!registryUrl) {
-    return fallbackToBundled ? comicCatalogs : [];
+    return fallbackToBundled ? getBundledCatalogs() : [];
   }
 
   try {
     const remoteCatalogs = await fetchRemoteCatalogs(registryUrl);
-    return remoteCatalogs.length > 0 || !fallbackToBundled ? remoteCatalogs : comicCatalogs;
+    return remoteCatalogs.length > 0 || !fallbackToBundled ? remoteCatalogs : getBundledCatalogs();
   } catch (error) {
     if (fallbackToBundled) {
-      return comicCatalogs;
+      return getBundledCatalogs();
     }
     throw error;
   }
 }
 
-export function remoteManifestToCatalog(manifest: RemoteComicCatalogManifest, manifestUrl: string): ComicCatalog {
+export function remoteManifestToCatalog(rawManifest: RemoteComicCatalogManifest, manifestUrl: string): ComicCatalog {
+  const manifest = normalizeManifest(rawManifest);
   const numberPadding = manifest.numberPadding ?? DEFAULT_CATALOG_NUMBER_PADDING;
   const explicitIssueMap = new Map((manifest.issues ?? []).map((issue) => [issue.number, issue]));
+  const coverBaseUrl = manifest.coverBaseUrl ? resolveRemoteUrl(manifest.coverBaseUrl, manifestUrl) : manifestUrl;
   const issues = createNumberedComicIssues({
     catalogId: manifest.id,
     catalogName: manifest.name,
@@ -167,7 +168,7 @@ export function remoteManifestToCatalog(manifest: RemoteComicCatalogManifest, ma
     coverUrlForIssue: (issueNumber, paddedIssueNumber) => {
       const explicitIssue = explicitIssueMap.get(issueNumber);
       if (explicitIssue?.coverUrl) {
-        return resolveCoverUrl(explicitIssue.coverUrl, manifest.coverBaseUrl ?? manifestUrl);
+        return resolveCoverUrl(explicitIssue.coverUrl, coverBaseUrl);
       }
 
       if (!manifest.coverPattern) {
@@ -179,7 +180,7 @@ export function remoteManifestToCatalog(manifest: RemoteComicCatalogManifest, ma
         .join(String(issueNumber))
         .split('{padded}')
         .join(paddedIssueNumber);
-      return resolveCoverUrl(patternedPath, manifest.coverBaseUrl ?? manifestUrl);
+      return resolveCoverUrl(patternedPath, coverBaseUrl);
     },
   }).map((issue) => applyRemoteIssueOverrides(issue, explicitIssueMap.get(issue.number), manifest.name, numberPadding));
 
@@ -196,6 +197,24 @@ export function remoteManifestToCatalog(manifest: RemoteComicCatalogManifest, ma
       manifestUrl,
     },
     issues,
+  };
+}
+
+function normalizeManifest(manifest: RemoteComicCatalogManifest): RemoteComicCatalogManifest {
+  return {
+    ...manifest,
+    id: manifest.id.trim(),
+    name: manifest.name.trim(),
+    shortName: manifest.shortName?.trim(),
+    description: manifest.description?.trim(),
+    coverBaseUrl: manifest.coverBaseUrl?.trim(),
+    coverPattern: manifest.coverPattern?.trim(),
+    issues: manifest.issues?.map((issue) => ({
+      ...issue,
+      label: issue.label?.trim(),
+      displayTitle: issue.displayTitle?.trim(),
+      coverUrl: issue.coverUrl?.trim(),
+    })),
   };
 }
 
@@ -218,6 +237,39 @@ function applyRemoteIssueOverrides(
     label: remoteIssue.label ?? `第${padded}期`,
     displayTitle: remoteIssue.displayTitle ?? `${catalogName} ${padded}`,
   };
+}
+
+function createNumberedComicIssues(options: {
+  catalogId: string;
+  catalogName: string;
+  issueCount: number;
+  numberPadding?: number;
+  coverUrlForIssue?: (issueNumber: number, paddedIssueNumber: string) => string | undefined;
+}) {
+  const padding = options.numberPadding ?? DEFAULT_CATALOG_NUMBER_PADDING;
+
+  return Array.from({ length: options.issueCount }, (_, index): ComicIssue => {
+    const number = index + 1;
+    const padded = formatIssueNumber(number, padding);
+
+    return {
+      key: makeIssueKey(options.catalogId, number),
+      catalogId: options.catalogId,
+      number,
+      sortNumber: number,
+      label: `第${padded}期`,
+      displayTitle: `${options.catalogName} ${padded}`,
+      coverUrl: options.coverUrlForIssue?.(number, padded),
+    };
+  });
+}
+
+function makeIssueKey(catalogId: string, issueNumber: number) {
+  return `${catalogId}:${issueNumber}` as const;
+}
+
+function formatIssueNumber(issueNumber: number, padding = DEFAULT_CATALOG_NUMBER_PADDING) {
+  return issueNumber.toString().padStart(padding, '0');
 }
 
 function normalizeRegistry(registry: RemoteComicCatalogRegistry, registryUrl: string): RemoteComicCatalogRegistry {
@@ -258,4 +310,13 @@ function validateUrl(url: string) {
   if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
     throw new Error('远程数据地址必须是 HTTP 或 HTTPS 地址。');
   }
+}
+
+function getExpoConstants(): ExpoConstants {
+  const expoConstants = require('expo-constants') as { default?: ExpoConstants } & ExpoConstants;
+  return expoConstants.default ?? expoConstants;
+}
+
+function getBundledCatalogs(): ComicCatalog[] {
+  return (require('./catalogs') as { comicCatalogs: ComicCatalog[] }).comicCatalogs;
 }
