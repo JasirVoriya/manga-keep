@@ -31,16 +31,20 @@ export function IssueCard({ issue, record, selected = false, width, onPress, onL
     >
       <View style={[styles.coverFrame, !owned && styles.dimmedFrame, wishlist && styles.wishlistFrame, selected && styles.selectedFrame]}>
         <View style={[styles.cover, { height: coverHeight, backgroundColor: fallbackColor }]}>
-        {issue.cover ? (
-          <Image source={issue.cover} style={styles.coverImage} resizeMode="cover" />
+        {issue.cover || issue.coverUrl ? (
+          <Image
+            source={issue.cover ?? { uri: issue.coverUrl }}
+            style={styles.coverImage}
+            resizeMode="cover"
+          />
         ) : (
           <View style={styles.fallback}>
             <View style={styles.fallbackTop}>
               <MaterialCommunityIcons name="star-four-points" size={16} color="rgba(255, 255, 255, 0.78)" />
             </View>
             <View>
-              <Text style={styles.brand}>知音漫客</Text>
-              <Text style={styles.subBrand}>COMIC GUESTS</Text>
+              <Text style={styles.brand}>{issue.displayTitle.split(' ')[0] || '漫画收藏'}</Text>
+              <Text style={styles.subBrand}>MANGA SHELF</Text>
             </View>
             <View>
               <Text style={styles.issueNo}>{issue.label}</Text>
