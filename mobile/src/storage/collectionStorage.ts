@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { IssueCondition, IssueRecord, IssueRecordMap, OwnershipStatus } from '../types';
+import { DEFAULT_CATALOG_ID, makeIssueKey } from '../data/catalogs';
+import type { ComicIssueKey, IssueCondition, IssueRecord, IssueRecordMap, OwnershipStatus } from '../types';
 
 const STORAGE_KEY = 'comic-guests.collection.v1';
 
@@ -10,6 +11,49 @@ export const defaultRecord: IssueRecord = {
   updatedAt: '',
 };
 
+function isIssueRecord(value: unknown): value is IssueRecord {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const record = value as Partial<IssueRecord>;
+  return (
+    typeof record.status === 'string' &&
+    typeof record.condition === 'string' &&
+    typeof record.note === 'string' &&
+    typeof record.updatedAt === 'string'
+  );
+}
+
+function normalizeRecordKey(key: string): ComicIssueKey | null {
+  if (/^[^:]+:\d+$/.test(key)) {
+    return key as ComicIssueKey;
+  }
+
+  if (/^\d+$/.test(key)) {
+    return makeIssueKey(DEFAULT_CATALOG_ID, Number(key));
+  }
+
+  return null;
+}
+
+export function normalizeRecordMap(rawRecords: unknown): IssueRecordMap {
+  if (!rawRecords || typeof rawRecords !== 'object') {
+    return {};
+  }
+
+  return Object.entries(rawRecords as Record<string, unknown>).reduce<IssueRecordMap>(
+    (next, [rawKey, rawRecord]) => {
+      const key = normalizeRecordKey(rawKey);
+      if (key && isIssueRecord(rawRecord)) {
+        next[key] = rawRecord;
+      }
+      return next;
+    },
+    {},
+  );
+}
+
 export async function loadRecords(): Promise<IssueRecordMap> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
   if (!raw) {
@@ -17,8 +61,7 @@ export async function loadRecords(): Promise<IssueRecordMap> {
   }
 
   try {
-    const parsed = JSON.parse(raw) as IssueRecordMap;
-    return parsed && typeof parsed === 'object' ? parsed : {};
+    return normalizeRecordMap(JSON.parse(raw));
   } catch {
     return {};
   }
@@ -32,11 +75,13 @@ export function mergeRecord(
   records: IssueRecordMap,
   issueNumber: number,
   patch: Partial<Pick<IssueRecord, 'status' | 'condition' | 'note'>>,
+  catalogId = DEFAULT_CATALOG_ID,
 ) {
-  const current = records[issueNumber] ?? defaultRecord;
+  const key = makeIssueKey(catalogId, issueNumber);
+  const current = records[key] ?? defaultRecord;
   return {
     ...records,
-    [issueNumber]: {
+    [key]: {
       ...current,
       ...patch,
       updatedAt: new Date().toISOString(),
@@ -59,8 +104,8 @@ export function normalizeStatus(status: OwnershipStatus, condition: IssueConditi
 export function exportRecords(records: IssueRecordMap) {
   return JSON.stringify(
     {
-      app: 'comic-guests',
-      version: 1,
+      app: 'manga-shelf',
+      version: 2,
       exportedAt: new Date().toISOString(),
       records,
     },
@@ -70,12 +115,20 @@ export function exportRecords(records: IssueRecordMap) {
 }
 
 export function parseImportedRecords(raw: string): IssueRecordMap {
-  const parsed = JSON.parse(raw) as { records?: IssueRecordMap } | IssueRecordMap;
-  const records = 'records' in parsed ? parsed.records : parsed;
-  if (!records || typeof records !== 'object') {
+  const parsed = JSON.parse(raw) as unknown;
+  const records =
+    parsed && typeof parsed === 'object' && 'records' in parsed
+      ? (parsed as { records?: unknown }).records
+      : parsed;
+  const normalized = normalizeRecordMap(records);
+  if (
+    Object.keys(normalized).length === 0 &&
+    records &&
+    typeof records === 'object' &&
+    Object.keys(records).length > 0
+  ) {
     throw new Error('导入内容不是有效的收藏记录 JSON。');
   }
 
-  return records;
+  return normalized;
 }
-

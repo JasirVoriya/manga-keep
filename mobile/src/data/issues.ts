@@ -1,20 +1,11 @@
-import { coverSources } from './coverSources.generated';
-import type { ComicIssue } from '../types';
+import {
+  DEFAULT_CATALOG_ISSUE_COUNT,
+  defaultCatalog,
+  formatIssueNumber,
+} from './catalogs';
 
-export const TOTAL_ISSUES = 704;
+export const TOTAL_ISSUES = DEFAULT_CATALOG_ISSUE_COUNT;
 
-export function formatIssueNumber(number: number) {
-  return number.toString().padStart(3, '0');
-}
+export { formatIssueNumber };
 
-export const issues: ComicIssue[] = Array.from({ length: TOTAL_ISSUES }, (_, index) => {
-  const number = index + 1;
-  const padded = formatIssueNumber(number);
-
-  return {
-    number,
-    label: `第${padded}期`,
-    displayTitle: `知音漫客 ${padded}`,
-    cover: coverSources[number],
-  };
-});
+export const issues = defaultCatalog.issues;

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "zhiyin-manke",
+  "name": "知音漫客",
+  "shortName": "漫客",
+  "kind": "magazine",
+  "description": "默认漫画杂志目录",
+  "issueCount": 704,
+  "numberPadding": 3,
+  "coverBaseUrl": "../../covers/zhiyin-manke/",
+  "coverPattern": "{padded}.webp",
+  "issues": [
+    {
+      "number": 1,
+      "label": "第001期",
+      "displayTitle": "知音漫客 001"
+    }
+  ]
+}

@@ -32,7 +32,7 @@ import {
   saveRecords,
 } from '../storage/collectionStorage';
 import { colors, radii } from '../styles/theme';
-import type { ComicIssue, IssueFilter, IssueRecordMap, OwnershipStatus } from '../types';
+import type { ComicIssue, ComicIssueKey, IssueFilter, IssueRecordMap, OwnershipStatus } from '../types';
 import { checkForAppUpdate, type AppUpdateInfo } from '../update/versionCheck';
 
 const filterOptions: Array<{ label: string; value: IssueFilter }> = [
@@ -61,7 +61,7 @@ export function LibraryScreen() {
   const [query, setQuery] = useState('');
   const [selectedIssue, setSelectedIssue] = useState<ComicIssue | null>(null);
   const [batchMode, setBatchMode] = useState(false);
-  const [selectedIssueNumbers, setSelectedIssueNumbers] = useState<Set<number>>(() => new Set());
+  const [selectedIssueKeys, setSelectedIssueKeys] = useState<Set<ComicIssueKey>>(() => new Set());
   const [backupText, setBackupText] = useState('');
   const [toolsOpen, setToolsOpen] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
@@ -90,8 +90,8 @@ export function LibraryScreen() {
   }, []);
 
   const stats = useMemo(() => {
-    const owned = issues.filter((issue) => records[issue.number]?.status === 'owned').length;
-    const wishlist = issues.filter((issue) => records[issue.number]?.status === 'wishlist').length;
+    const owned = issues.filter((issue) => records[issue.key]?.status === 'owned').length;
+    const wishlist = issues.filter((issue) => records[issue.key]?.status === 'wishlist').length;
     return {
       owned,
       wishlist,
@@ -103,7 +103,7 @@ export function LibraryScreen() {
   const filteredIssues = useMemo(() => {
     const normalizedQuery = query.trim();
     return issues.filter((issue) => {
-      const record = records[issue.number] ?? defaultRecord;
+      const record = records[issue.key] ?? defaultRecord;
       const matchesFilter = filter === 'all' || record.status === filter;
       const matchesQuery =
         normalizedQuery.length === 0 ||
@@ -118,7 +118,7 @@ export function LibraryScreen() {
   const gap = width < 420 ? 8 : 12;
   const sidePadding = width < 420 ? 12 : 20;
   const cardWidth = Math.floor((contentWidth - sidePadding * 2 - gap * (columns - 1)) / columns);
-  const selectedRecord = selectedIssue ? records[selectedIssue.number] ?? defaultRecord : defaultRecord;
+  const selectedRecord = selectedIssue ? records[selectedIssue.key] ?? defaultRecord : defaultRecord;
 
   function persist(nextRecords: IssueRecordMap) {
     setRecords(nextRecords);
@@ -128,50 +128,54 @@ export function LibraryScreen() {
   }
 
   function updateIssue(issue: ComicIssue, patch: Parameters<typeof mergeRecord>[2]) {
-    const next = mergeRecord(records, issue.number, patch);
+    const next = mergeRecord(records, issue.number, patch, issue.catalogId);
     persist(next);
   }
 
-  function toggleBatchSelection(issueNumber: number) {
-    setSelectedIssueNumbers((current) => {
+  function toggleBatchSelection(issueKey: ComicIssueKey) {
+    setSelectedIssueKeys((current) => {
       const next = new Set(current);
-      if (next.has(issueNumber)) {
-        next.delete(issueNumber);
+      if (next.has(issueKey)) {
+        next.delete(issueKey);
       } else {
-        next.add(issueNumber);
+        next.add(issueKey);
       }
       return next;
     });
   }
 
-  function enterBatchWith(issueNumber?: number) {
+  function enterBatchWith(issueKey?: ComicIssueKey) {
     setBatchMode(true);
-    if (issueNumber) {
-      setSelectedIssueNumbers((current) => new Set(current).add(issueNumber));
+    if (issueKey) {
+      setSelectedIssueKeys((current) => new Set(current).add(issueKey));
     }
   }
 
   function exitBatchMode() {
     setBatchMode(false);
-    setSelectedIssueNumbers(new Set());
+    setSelectedIssueKeys(new Set());
   }
 
   function selectVisibleIssues() {
-    setSelectedIssueNumbers(new Set(filteredIssues.map((issue) => issue.number)));
+    setSelectedIssueKeys(new Set(filteredIssues.map((issue) => issue.key)));
   }
 
   function applyBatchStatus(status: OwnershipStatus) {
-    if (selectedIssueNumbers.size === 0) {
+    if (selectedIssueKeys.size === 0) {
       return;
     }
 
     let nextRecords = records;
-    selectedIssueNumbers.forEach((issueNumber) => {
-      const current = nextRecords[issueNumber] ?? defaultRecord;
-      nextRecords = mergeRecord(nextRecords, issueNumber, {
+    selectedIssueKeys.forEach((issueKey) => {
+      const issue = issues.find((candidate) => candidate.key === issueKey);
+      if (!issue) {
+        return;
+      }
+      const current = nextRecords[issue.key] ?? defaultRecord;
+      nextRecords = mergeRecord(nextRecords, issue.number, {
         status,
         condition: normalizeStatus(status, current.condition),
-      });
+      }, issue.catalogId);
     });
     persist(nextRecords);
     exitBatchMode();
@@ -302,13 +306,13 @@ export function LibraryScreen() {
           </View>
           {batchMode && (
             <View style={styles.batchBar}>
-              <Text style={styles.batchCount}>已选 {selectedIssueNumbers.size} 期</Text>
+              <Text style={styles.batchCount}>已选 {selectedIssueKeys.size} 期</Text>
               <View style={styles.batchActions}>
                 <Pressable style={styles.batchButton} onPress={selectVisibleIssues}>
                   <MaterialCommunityIcons name="select-all" size={14} color={colors.shelfDark} />
                   <Text style={styles.batchButtonText}>全选当前</Text>
                 </Pressable>
-                <Pressable style={styles.batchButton} onPress={() => setSelectedIssueNumbers(new Set())}>
+                <Pressable style={styles.batchButton} onPress={() => setSelectedIssueKeys(new Set())}>
                   <MaterialCommunityIcons name="selection-remove" size={14} color={colors.shelfDark} />
                   <Text style={styles.batchButtonText}>清空</Text>
                 </Pressable>
@@ -334,7 +338,7 @@ export function LibraryScreen() {
             key={`columns-${columns}`}
             data={filteredIssues}
             numColumns={columns}
-            keyExtractor={(item) => String(item.number)}
+            keyExtractor={(item) => item.key}
             contentContainerStyle={[styles.gridContent, { paddingHorizontal: sidePadding }]}
             columnWrapperStyle={columns > 1 ? { gap } : undefined}
             ListEmptyComponent={
@@ -347,11 +351,11 @@ export function LibraryScreen() {
             renderItem={({ item }) => (
               <IssueCard
                 issue={item}
-                record={records[item.number] ?? defaultRecord}
-                selected={selectedIssueNumbers.has(item.number)}
+                record={records[item.key] ?? defaultRecord}
+                selected={selectedIssueKeys.has(item.key)}
                 width={cardWidth}
-                onPress={() => (batchMode ? toggleBatchSelection(item.number) : setSelectedIssue(item))}
-                onLongPress={() => enterBatchWith(item.number)}
+                onPress={() => (batchMode ? toggleBatchSelection(item.key) : setSelectedIssue(item))}
+                onLongPress={() => enterBatchWith(item.key)}
               />
             )}
           />
