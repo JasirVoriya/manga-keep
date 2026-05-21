@@ -1,11 +1,10 @@
-import { coverSources } from './coverSources.generated';
-import { createNumberedComicIssues, DEFAULT_CATALOG_NUMBER_PADDING } from './catalogHelpers';
-export { createNumberedComicIssues, DEFAULT_CATALOG_NUMBER_PADDING, formatIssueNumber, makeIssueKey } from './catalogHelpers';
 import type { ComicCatalog } from '../types';
+import { createNumberedComicIssues, DEFAULT_CATALOG_NUMBER_PADDING } from './catalogHelpers';
+import { coverSources } from './coverSources.generated';
+import { DEFAULT_CATALOG_ID, DEFAULT_CATALOG_ISSUE_COUNT, DEFAULT_CATALOG_NAME } from './defaultCatalogConstants';
 
-export const DEFAULT_CATALOG_ID = 'zhiyin-manke';
-export const DEFAULT_CATALOG_NAME = '知音漫客';
-export const DEFAULT_CATALOG_ISSUE_COUNT = 704;
+export { createNumberedComicIssues, DEFAULT_CATALOG_NUMBER_PADDING, formatIssueNumber, makeIssueKey } from './catalogHelpers';
+export { DEFAULT_CATALOG_ID, DEFAULT_CATALOG_ISSUE_COUNT, DEFAULT_CATALOG_NAME } from './defaultCatalogConstants';
 
 export const defaultCatalog: ComicCatalog = {
   id: DEFAULT_CATALOG_ID,

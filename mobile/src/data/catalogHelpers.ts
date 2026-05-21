@@ -2,6 +2,10 @@ import type { ComicIssue, ComicIssueKey } from '../types';
 
 export const DEFAULT_CATALOG_NUMBER_PADDING = 3;
 
+export function isSafeCatalogId(value: unknown): value is string {
+  return typeof value === 'string' && /^[A-Za-z0-9_-]+$/.test(value);
+}
+
 export function makeIssueKey(catalogId: string, issueNumber: number): ComicIssueKey {
   return `${catalogId}:${issueNumber}`;
 }

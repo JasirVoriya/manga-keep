@@ -11,6 +11,7 @@ import {
   createNumberedComicIssues,
   DEFAULT_CATALOG_NUMBER_PADDING,
   formatIssueNumber,
+  isSafeCatalogId,
   makeIssueKey,
 } from './catalogHelpers';
 
@@ -69,8 +70,7 @@ function isRegistryEntry(value: unknown): value is RemoteComicCatalogRegistryEnt
   }
 
   return (
-    typeof value.id === 'string' &&
-    value.id.trim().length > 0 &&
+    isSafeCatalogId(value.id) &&
     typeof value.name === 'string' &&
     value.name.trim().length > 0 &&
     isCatalogKind(value.kind) &&
@@ -101,8 +101,7 @@ export function isRemoteCatalogManifest(value: unknown): value is RemoteComicCat
 
   return (
     value.schemaVersion === 1 &&
-    typeof value.id === 'string' &&
-    value.id.trim().length > 0 &&
+    isSafeCatalogId(value.id) &&
     typeof value.name === 'string' &&
     value.name.trim().length > 0 &&
     isCatalogKind(value.kind) &&
@@ -141,6 +140,14 @@ export function resolveRemoteUrl(url: string, baseUrl: string) {
   }
 }
 
+export function assertHttpRemoteUrl(url: string) {
+  const parsed = new URL(url);
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error('远程数据地址必须是 HTTP 或 HTTPS 地址。');
+  }
+  return url;
+}
+
 export async function fetchCatalogRegistry(registryUrl: string, redirectCount = 0): Promise<RemoteComicCatalogRegistry> {
   validateUrl(registryUrl);
   const data = await fetchJson(registryUrl);
@@ -153,14 +160,14 @@ export async function fetchCatalogRegistry(registryUrl: string, redirectCount = 
     if (redirectCount >= MAX_REGISTRY_REDIRECTS) {
       throw new Error('漫画目录注册表重定向次数过多。');
     }
-    return fetchCatalogRegistry(resolveRemoteUrl(redirectUrl, registryUrl), redirectCount + 1);
+    return fetchCatalogRegistry(assertHttpRemoteUrl(resolveRemoteUrl(redirectUrl, registryUrl)), redirectCount + 1);
   }
 
   return normalizeRegistry(data, registryUrl);
 }
 
 export async function fetchRemoteCatalog(entry: RemoteComicCatalogRegistryEntry, registryUrl: string) {
-  const manifestUrl = resolveRemoteUrl(entry.manifestUrl, registryUrl);
+  const manifestUrl = assertHttpRemoteUrl(resolveRemoteUrl(entry.manifestUrl, registryUrl));
   const data = await fetchJson(manifestUrl);
   if (!isRemoteCatalogManifest(data)) {
     throw new Error(`漫画目录格式无效：${entry.name}`);
@@ -196,7 +203,9 @@ export function remoteManifestToCatalog(rawManifest: RemoteComicCatalogManifest,
   const manifest = normalizeManifest(rawManifest);
   const numberPadding = manifest.numberPadding ?? DEFAULT_CATALOG_NUMBER_PADDING;
   const explicitIssueMap = new Map((manifest.issues ?? []).map((issue) => [issue.number, issue]));
-  const coverBaseUrl = manifest.coverBaseUrl ? resolveRemoteUrl(manifest.coverBaseUrl, manifestUrl) : manifestUrl;
+  const coverBaseUrl = manifest.coverBaseUrl
+    ? assertHttpRemoteUrl(resolveRemoteUrl(manifest.coverBaseUrl, manifestUrl))
+    : assertHttpRemoteUrl(manifestUrl);
   const issues = createNumberedComicIssues({
     catalogId: manifest.id,
     catalogName: manifest.name,
@@ -285,13 +294,13 @@ function normalizeRegistry(registry: RemoteComicCatalogRegistry, registryUrl: st
       name: entry.name.trim(),
       shortName: entry.shortName?.trim(),
       description: entry.description?.trim(),
-      manifestUrl: resolveRemoteUrl(entry.manifestUrl.trim(), registryUrl),
+      manifestUrl: assertHttpRemoteUrl(resolveRemoteUrl(entry.manifestUrl.trim(), registryUrl)),
     })),
   };
 }
 
 function resolveCoverUrl(coverUrl: string, baseUrl: string) {
-  return resolveRemoteUrl(coverUrl.trim(), baseUrl);
+  return assertHttpRemoteUrl(resolveRemoteUrl(coverUrl.trim(), baseUrl));
 }
 
 async function fetchJson(url: string) {
@@ -310,10 +319,7 @@ async function fetchJson(url: string) {
 }
 
 function validateUrl(url: string) {
-  const parsed = new URL(url);
-  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-    throw new Error('远程数据地址必须是 HTTP 或 HTTPS 地址。');
-  }
+  assertHttpRemoteUrl(url);
 }
 
 function getExpoConstants(): ExpoConstants {

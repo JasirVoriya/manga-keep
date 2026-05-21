@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  fetchRemoteCatalog,
   isRemoteCatalogManifest,
   isRemoteCatalogRegistry,
   isPlaceholderCatalogRegistryUrl,
@@ -34,6 +35,25 @@ describe('remote catalog registry parsing', () => {
       }),
       false,
     );
+  });
+
+  it('rejects catalog entries with unsafe IDs', () => {
+    for (const id of ['foo:bar', 'foo/bar', 'foo bar']) {
+      assert.equal(
+        isRemoteCatalogRegistry({
+          schemaVersion: 1,
+          catalogs: [
+            {
+              id,
+              name: 'Bad',
+              kind: 'magazine',
+              manifestUrl: 'https://example.com/catalogs/bad/manifest.v1.json',
+            },
+          ],
+        }),
+        false,
+      );
+    }
   });
 
   it('rejects catalog entries with invalid optional fields', () => {
@@ -135,6 +155,64 @@ describe('remote catalog registry parsing', () => {
       }),
       false,
     );
+  });
+
+  it('rejects manifests with unsafe IDs', () => {
+    for (const id of ['foo:bar', 'foo/bar', 'foo bar']) {
+      assert.equal(
+        isRemoteCatalogManifest({
+          schemaVersion: 1,
+          id,
+          name: 'Bad',
+          kind: 'series',
+          issueCount: 1,
+        }),
+        false,
+      );
+    }
+  });
+
+  it('rejects non-HTTP manifest URLs after registry resolution', async () => {
+    for (const manifestUrl of ['file:///tmp/manifest.v1.json', 'javascript:alert(1)']) {
+      await assert.rejects(
+        () =>
+          fetchRemoteCatalog(
+            {
+              id: 'demo-comic',
+              name: 'Demo',
+              kind: 'series',
+              manifestUrl,
+            },
+            'https://example.com/registry/index.v1.json',
+          ),
+        /HTTP/,
+      );
+    }
+  });
+
+  it('rejects non-HTTP cover URLs after manifest resolution', () => {
+    for (const coverUrl of ['file:///tmp/cover.webp', 'javascript:alert(1)']) {
+      assert.throws(
+        () =>
+          remoteManifestToCatalog(
+            {
+              schemaVersion: 1,
+              id: 'demo-comic',
+              name: '测试漫画',
+              kind: 'series',
+              issueCount: 1,
+              issues: [
+                {
+                  number: 1,
+                  coverUrl,
+                },
+              ],
+            },
+            'https://example.com/catalogs/demo-comic/manifest.v1.json',
+          ),
+        /HTTP/,
+      );
+    }
   });
 
   it('rejects manifests with invalid optional issue fields', () => {

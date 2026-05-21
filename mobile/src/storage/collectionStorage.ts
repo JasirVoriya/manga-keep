@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DEFAULT_CATALOG_ID, makeIssueKey } from '../data/catalogs';
+import { makeIssueKey } from '../data/catalogHelpers';
+import { DEFAULT_CATALOG_ID } from '../data/defaultCatalogConstants';
 import type { ComicIssueKey, IssueCondition, IssueRecord, IssueRecordMap, OwnershipStatus } from '../types';
 
 const STORAGE_KEY = 'comic-guests.collection.v1';
