@@ -115,6 +115,22 @@ App 最多跟随 3 次重定向，避免错误配置导致无限跳转。
 }
 ```
 
+## 生成知音漫客远程目录
+
+当前本地封面仍在 `mobile/assets/covers`。可以先生成远程 manifest：
+
+```bash
+node scripts/generate-remote-catalog-manifest.mjs
+```
+
+生成文件：
+
+```text
+release/catalogs/zhiyin-manke/manifest.generated.json
+```
+
+把该文件随 `covers/zhiyin-manke/` 上传到静态托管后，再把注册表中的 `manifestUrl` 指向它。
+
 ## 迁移策略
 
 最稳的迁移方式：
