@@ -4,6 +4,7 @@ node_modules/
 _bmad/
 _bmad-output/
 design-artifacts/
+.superpowers/
 
 .expo/
 .expo-shared/
