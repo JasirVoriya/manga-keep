@@ -23,7 +23,7 @@ import { MascotSticker } from '../components/MascotSticker';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { UpdatePromptModal } from '../components/UpdatePromptModal';
 import { defaultCatalog } from '../data/catalogs';
-import { loadConfiguredCatalogs } from '../data/catalogRegistry';
+import { loadCatalogStore } from '../data/catalogStore';
 import {
   defaultRecord,
   exportRecords,
@@ -87,22 +87,22 @@ export function LibraryScreen() {
   useEffect(() => {
     let cancelled = false;
 
-    loadConfiguredCatalogs({ fallbackToBundled: false })
-      .then((loadedCatalogs) => {
+    loadCatalogStore()
+      .then((result) => {
         if (cancelled) {
           return;
         }
-        setCatalogs(loadedCatalogs);
+        setCatalogs(result.catalogs);
         const currentId = selectedCatalogIdRef.current;
-        const nextSelectedId = loadedCatalogs.some((catalog) => catalog.id === currentId)
+        const nextSelectedId = result.catalogs.some((catalog) => catalog.id === currentId)
           ? currentId
-          : loadedCatalogs[0]?.id ?? defaultCatalog.id;
+          : result.catalogs[0]?.id ?? defaultCatalog.id;
         if (nextSelectedId !== currentId) {
           resetCatalogSelectionState();
           selectedCatalogIdRef.current = nextSelectedId;
           setSelectedCatalogId(nextSelectedId);
         }
-        setCatalogLoadFailed(false);
+        setCatalogLoadFailed(result.publicCatalogLoadFailed);
       })
       .catch(() => {
         if (!cancelled) {
@@ -322,7 +322,7 @@ export function LibraryScreen() {
             }}
           />
           {catalogLoadFailed && (
-            <Text style={styles.catalogWarning}>远程漫画目录暂时不可用，正在使用内置目录。</Text>
+            <Text style={styles.catalogWarning}>公共目录暂时不可用，已显示本地目录和内置目录。</Text>
           )}
           <View style={styles.searchRow}>
             <View style={styles.searchBox}>
