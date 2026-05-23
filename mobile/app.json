@@ -31,6 +31,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
+      "catalogRegistryUrl": "https://gitee.com/YOUR_NAME/manga-shelf-data/raw/master/registry/index.v1.json",
       "updateManifestUrl": "https://gitee.com/YOUR_NAME/comic-guests/raw/master/release/version.json"
     }
   }

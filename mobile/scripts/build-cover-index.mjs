@@ -6,6 +6,8 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const coversDir = path.join(projectRoot, 'assets', 'covers');
 const outputFile = path.join(projectRoot, 'src', 'data', 'coverSources.generated.ts');
 
+// Legacy bundled-cover fallback. Keep this generator only until the static
+// remote catalog and cover URLs are deployed and verified in the app.
 function issueNumberFromFile(fileName) {
   const match = fileName.match(/^(\d{1,4})\.(jpg|jpeg|png|webp)$/i);
   return match ? Number(match[1]) : null;

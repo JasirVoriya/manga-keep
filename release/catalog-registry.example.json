@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-05-21T00:00:00.000Z",
+  "catalogs": [
+    {
+      "id": "zhiyin-manke",
+      "name": "知音漫客",
+      "shortName": "漫客",
+      "kind": "magazine",
+      "description": "默认漫画杂志目录",
+      "manifestUrl": "../catalogs/zhiyin-manke/manifest.v1.json"
+    }
+  ]
+}
