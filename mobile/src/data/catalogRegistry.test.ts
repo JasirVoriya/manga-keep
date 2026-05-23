@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import type { CatalogSourceConfig } from '../types';
 import {
   fetchRemoteCatalog,
+  fetchRemoteCatalogsFromSources,
   isRemoteCatalogManifest,
   isRemoteCatalogRegistry,
   isPlaceholderCatalogRegistryUrl,
@@ -263,5 +265,66 @@ describe('remote catalog registry parsing', () => {
     assert.equal(isPlaceholderCatalogRegistryUrl('   '), true);
     assert.equal(isPlaceholderCatalogRegistryUrl('https://raw.githubusercontent.com/YOUR_NAME/catalogs/main/index.json'), true);
     assert.equal(isPlaceholderCatalogRegistryUrl('https://example.com/catalogs/index.json'), false);
+  });
+});
+
+describe('remote catalog source fallback', () => {
+  it('loads catalogs from the first available source by priority', async () => {
+    const sources: CatalogSourceConfig[] = [
+      {
+        id: 'bad',
+        registryUrl: 'https://bad.example.test/registry/index.v1.json',
+        priority: 1,
+      },
+      {
+        id: 'good',
+        registryUrl: 'https://good.example.test/registry/index.v1.json',
+        priority: 2,
+      },
+    ];
+    const originalFetch = globalThis.fetch;
+
+    globalThis.fetch = async (input) => {
+      const url = input.toString();
+
+      if (url === 'https://bad.example.test/registry/index.v1.json') {
+        return new Response('not found', { status: 404 });
+      }
+
+      if (url === 'https://good.example.test/registry/index.v1.json') {
+        return Response.json({
+          schemaVersion: 1,
+          catalogs: [
+            {
+              id: 'demo-comic',
+              name: '测试漫画',
+              kind: 'series',
+              manifestUrl: '../catalogs/demo-comic/manifest.v1.json',
+            },
+          ],
+        });
+      }
+
+      if (url === 'https://good.example.test/catalogs/demo-comic/manifest.v1.json') {
+        return Response.json({
+          schemaVersion: 1,
+          id: 'demo-comic',
+          name: '测试漫画',
+          kind: 'series',
+          issueCount: 1,
+        });
+      }
+
+      return new Response('not found', { status: 404 });
+    };
+
+    try {
+      const result = await fetchRemoteCatalogsFromSources(sources);
+
+      assert.equal(result.sourceId, 'good');
+      assert.equal(result.catalogs[0].id, 'demo-comic');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });

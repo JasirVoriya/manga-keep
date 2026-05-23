@@ -2,6 +2,7 @@ import type {
   ComicCatalog,
   ComicCatalogKind,
   ComicIssue,
+  CatalogSourceConfig,
   RemoteComicCatalogManifest,
   RemoteComicCatalogRegistry,
   RemoteComicCatalogRegistryEntry,
@@ -19,6 +20,7 @@ const MAX_REGISTRY_REDIRECTS = 3;
 
 type AppExtra = {
   catalogRegistryUrl?: string;
+  catalogSources?: CatalogSourceConfig[];
 };
 
 type ExpoConstants = {
@@ -132,6 +134,38 @@ export function getCatalogRegistryUrl() {
   return isPlaceholderCatalogRegistryUrl(registryUrl) ? '' : registryUrl;
 }
 
+export function getConfiguredCatalogSources(): CatalogSourceConfig[] {
+  const extra = getExpoConstants().expoConfig?.extra as AppExtra | undefined;
+  const catalogSources = Array.isArray(extra?.catalogSources) ? extra.catalogSources : [];
+  const validSources = catalogSources
+    .filter((source): source is CatalogSourceConfig => {
+      if (!isRecord(source)) {
+        return false;
+      }
+
+      return (
+        typeof source.id === 'string' &&
+        source.id.trim().length > 0 &&
+        typeof source.registryUrl === 'string' &&
+        !isPlaceholderCatalogRegistryUrl(source.registryUrl) &&
+        typeof source.priority === 'number'
+      );
+    })
+    .map((source) => ({
+      id: source.id.trim(),
+      registryUrl: source.registryUrl.trim(),
+      priority: source.priority,
+    }))
+    .sort((first, second) => first.priority - second.priority);
+
+  if (validSources.length > 0) {
+    return validSources;
+  }
+
+  const legacyUrl = getCatalogRegistryUrl();
+  return legacyUrl ? [{ id: 'legacy', registryUrl: legacyUrl, priority: 1 }] : [];
+}
+
 export function resolveRemoteUrl(url: string, baseUrl: string) {
   try {
     return new URL(url, baseUrl).toString();
@@ -180,16 +214,47 @@ export async function fetchRemoteCatalogs(registryUrl: string) {
   return Promise.all(registry.catalogs.map((entry) => fetchRemoteCatalog(entry, registryUrl)));
 }
 
+export async function fetchRemoteCatalogsFromSources(
+  sources: CatalogSourceConfig[],
+): Promise<{ sourceId: string; catalogs: ComicCatalog[] }> {
+  const prioritizedSources = [...sources].sort((first, second) => first.priority - second.priority);
+  let lastError: unknown;
+
+  for (const source of prioritizedSources) {
+    try {
+      const catalogs = await fetchRemoteCatalogs(source.registryUrl);
+      return {
+        sourceId: source.id,
+        catalogs: catalogs.map((catalog) =>
+          catalog.source.type === 'remote'
+            ? {
+                ...catalog,
+                source: {
+                  ...catalog.source,
+                  sourceId: source.id,
+                },
+              }
+            : catalog,
+        ),
+      };
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('所有公共目录源都不可用。');
+}
+
 export async function loadConfiguredCatalogs(options: { fallbackToBundled?: boolean } = {}) {
-  const registryUrl = getCatalogRegistryUrl();
+  const sources = getConfiguredCatalogSources();
   const fallbackToBundled = options.fallbackToBundled ?? true;
 
-  if (!registryUrl) {
+  if (sources.length === 0) {
     return fallbackToBundled ? getBundledCatalogs() : [];
   }
 
   try {
-    const remoteCatalogs = await fetchRemoteCatalogs(registryUrl);
+    const { catalogs: remoteCatalogs } = await fetchRemoteCatalogsFromSources(sources);
     return remoteCatalogs.length > 0 || !fallbackToBundled ? remoteCatalogs : getBundledCatalogs();
   } catch (error) {
     if (fallbackToBundled) {

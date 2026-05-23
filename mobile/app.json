@@ -31,7 +31,18 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "catalogRegistryUrl": "https://gitee.com/YOUR_NAME/manga-shelf-data/raw/master/registry/index.v1.json",
+      "catalogSources": [
+        {
+          "id": "gitee",
+          "registryUrl": "https://gitee.com/YOUR_NAME/manga-shelf-data/raw/master/registry/index.v1.json",
+          "priority": 1
+        },
+        {
+          "id": "github",
+          "registryUrl": "https://YOUR_NAME.github.io/manga-shelf-data/registry/index.v1.json",
+          "priority": 2
+        }
+      ],
       "updateManifestUrl": "https://gitee.com/YOUR_NAME/comic-guests/raw/master/release/version.json"
     }
   }
