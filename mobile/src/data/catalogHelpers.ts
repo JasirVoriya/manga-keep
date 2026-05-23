@@ -1,4 +1,4 @@
-import type { ComicIssue, ComicIssueKey } from '../types';
+import type { ComicCatalog, ComicIssue, ComicIssueKey, StoredComicCatalogDefinition } from '../types';
 
 export const DEFAULT_CATALOG_NUMBER_PADDING = 3;
 
@@ -12,6 +12,16 @@ export function makeIssueKey(catalogId: string, issueNumber: number): ComicIssue
 
 export function formatIssueNumber(issueNumber: number, padding = DEFAULT_CATALOG_NUMBER_PADDING) {
   return issueNumber.toString().padStart(padding, '0');
+}
+
+export function expandCoverPattern(
+  pattern: string,
+  issueNumber: number,
+  padding = DEFAULT_CATALOG_NUMBER_PADDING
+) {
+  return pattern
+    .replaceAll('{number}', issueNumber.toString())
+    .replaceAll('{padded}', formatIssueNumber(issueNumber, padding));
 }
 
 export function createNumberedComicIssues(options: {
@@ -39,4 +49,31 @@ export function createNumberedComicIssues(options: {
       cover: options.covers?.[number],
     };
   });
+}
+
+export function createCatalogFromDefinition(
+  definition: StoredComicCatalogDefinition
+): ComicCatalog {
+  const coverPattern = definition.coverPattern;
+
+  return {
+    id: definition.id,
+    name: definition.name,
+    shortName: definition.shortName,
+    kind: definition.kind,
+    description: definition.description,
+    issueCount: definition.issueCount,
+    numberPadding: definition.numberPadding,
+    source: { type: 'local', definition },
+    issues: createNumberedComicIssues({
+      catalogId: definition.id,
+      catalogName: definition.name,
+      issueCount: definition.issueCount,
+      numberPadding: definition.numberPadding,
+      coverUrlForIssue: coverPattern
+        ? (issueNumber) =>
+            expandCoverPattern(coverPattern, issueNumber, definition.numberPadding)
+        : undefined,
+    }),
+  };
 }
