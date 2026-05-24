@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 import { describe, it } from 'node:test';
 import type { ComicCatalog, StoredComicCatalogDefinition } from '../types';
 import { createNumberedComicIssues } from './catalogHelpers';
-import type { mergeCatalogLists as mergeCatalogListsType } from './catalogStore';
+import type { loadCatalogStore as loadCatalogStoreType, mergeCatalogLists as mergeCatalogListsType } from './catalogStore';
 
 const require = createRequire(import.meta.url);
 require.extensions['.jpg'] = (module) => {
@@ -11,6 +11,9 @@ require.extensions['.jpg'] = (module) => {
 };
 const { mergeCatalogLists } = require('./catalogStore') as {
   mergeCatalogLists: typeof mergeCatalogListsType;
+};
+const { loadCatalogStore } = require('./catalogStore') as {
+  loadCatalogStore: typeof loadCatalogStoreType;
 };
 
 const timestamp = '2026-05-23T00:00:00.000Z';
@@ -83,6 +86,26 @@ describe('catalog store aggregation', () => {
     assert.deepEqual(
       catalogs.map((item) => item.id),
       [bundledCatalog.id],
+    );
+  });
+
+  it('still returns public catalogs when local catalog loading fails', async () => {
+    const publicCatalog = catalog('public-a', {
+      type: 'remote',
+      manifestUrl: 'https://example.test/public-a.json',
+    });
+
+    const result = await loadCatalogStore({
+      loadLocalDefinitions: async () => {
+        throw new Error('local storage unavailable');
+      },
+      loadPublicCatalogs: async () => [publicCatalog],
+    });
+
+    assert.equal(result.publicCatalogLoadFailed, false);
+    assert.deepEqual(
+      result.catalogs.map((item) => item.id),
+      ['public-a'],
     );
   });
 });

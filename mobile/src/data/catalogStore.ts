@@ -9,6 +9,11 @@ export type CatalogLoadResult = {
   publicCatalogLoadFailed: boolean;
 };
 
+type CatalogStoreDependencies = {
+  loadLocalDefinitions?: typeof loadLocalCatalogDefinitions;
+  loadPublicCatalogs?: typeof loadConfiguredCatalogs;
+};
+
 export function mergeCatalogLists(options: {
   localCatalogs: ComicCatalog[];
   publicCatalogs: ComicCatalog[];
@@ -35,12 +40,20 @@ export function mergeCatalogLists(options: {
   });
 }
 
-export async function loadCatalogStore(): Promise<CatalogLoadResult> {
-  const localDefinitions = await loadLocalCatalogDefinitions();
-  const localCatalogs = localDefinitions.map(createCatalogFromDefinition);
+export async function loadCatalogStore(dependencies: CatalogStoreDependencies = {}): Promise<CatalogLoadResult> {
+  const loadLocalDefinitions = dependencies.loadLocalDefinitions ?? loadLocalCatalogDefinitions;
+  const loadPublicCatalogs = dependencies.loadPublicCatalogs ?? loadConfiguredCatalogs;
+  let localCatalogs: ComicCatalog[] = [];
 
   try {
-    const publicCatalogs = await loadConfiguredCatalogs({ fallbackToBundled: false });
+    const localDefinitions = await loadLocalDefinitions();
+    localCatalogs = localDefinitions.map(createCatalogFromDefinition);
+  } catch {
+    localCatalogs = [];
+  }
+
+  try {
+    const publicCatalogs = await loadPublicCatalogs({ fallbackToBundled: false });
     const bundledCatalogs = publicCatalogs.length === 0 && localCatalogs.length === 0 ? [defaultCatalog] : [];
 
     return {
