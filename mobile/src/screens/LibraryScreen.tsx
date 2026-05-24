@@ -4,7 +4,6 @@ import {
   Alert,
   FlatList,
   Image,
-  Modal,
   NativeSyntheticEvent,
   Pressable,
   SafeAreaView,
@@ -19,9 +18,12 @@ import { AnimatedMangaDecor } from '../components/AnimatedMangaDecor';
 import { CatalogSwitcher } from '../components/CatalogSwitcher';
 import { IssueCard } from '../components/IssueCard';
 import { IssueDetailModal } from '../components/IssueDetailModal';
+import { LocalCatalogEditorModal } from '../components/LocalCatalogEditorModal';
 import { MascotSticker } from '../components/MascotSticker';
 import { SegmentedControl } from '../components/SegmentedControl';
+import { ToolsModal } from '../components/ToolsModal';
 import { UpdatePromptModal } from '../components/UpdatePromptModal';
+import { createCatalogFromDefinition } from '../data/catalogHelpers';
 import { defaultCatalog } from '../data/catalogs';
 import { loadCatalogStore } from '../data/catalogStore';
 import {
@@ -33,8 +35,21 @@ import {
   parseImportedRecords,
   saveRecords,
 } from '../storage/collectionStorage';
+import {
+  exportCatalogDefinition,
+  parseImportedCatalogDefinition,
+  upsertLocalCatalogDefinition,
+} from '../storage/localCatalogStorage';
 import { colors, radii } from '../styles/theme';
-import type { ComicCatalog, ComicIssue, ComicIssueKey, IssueFilter, IssueRecordMap, OwnershipStatus } from '../types';
+import type {
+  ComicCatalog,
+  ComicIssue,
+  ComicIssueKey,
+  IssueFilter,
+  IssueRecordMap,
+  OwnershipStatus,
+  StoredComicCatalogDefinition,
+} from '../types';
 import { checkForAppUpdate, type AppUpdateInfo } from '../update/versionCheck';
 
 const filterOptions: Array<{ label: string; value: IssueFilter }> = [
@@ -69,8 +84,10 @@ export function LibraryScreen() {
   const [selectedIssueKeys, setSelectedIssueKeys] = useState<Set<ComicIssueKey>>(() => new Set());
   const [backupText, setBackupText] = useState('');
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [catalogEditorOpen, setCatalogEditorOpen] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
   const selectedCatalogIdRef = useRef(selectedCatalogId);
+  const sessionLocalCatalogsRef = useRef(new Map<string, ComicCatalog>());
   const pinchStartDistance = useRef(0);
   const pinchStartColumns = useRef(4);
 
@@ -84,6 +101,18 @@ export function LibraryScreen() {
     setBatchMode(false);
   }
 
+  function mergeWithSessionLocalCatalogs(loadedCatalogs: ComicCatalog[]) {
+    const sessionLocalCatalogs = [...sessionLocalCatalogsRef.current.values()];
+    if (sessionLocalCatalogs.length === 0) {
+      return loadedCatalogs;
+    }
+
+    return [
+      ...sessionLocalCatalogs,
+      ...loadedCatalogs.filter((catalog) => !sessionLocalCatalogsRef.current.has(catalog.id)),
+    ];
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -92,11 +121,12 @@ export function LibraryScreen() {
         if (cancelled) {
           return;
         }
-        setCatalogs(result.catalogs);
+        const nextCatalogs = mergeWithSessionLocalCatalogs(result.catalogs);
+        setCatalogs(nextCatalogs);
         const currentId = selectedCatalogIdRef.current;
-        const nextSelectedId = result.catalogs.some((catalog) => catalog.id === currentId)
+        const nextSelectedId = nextCatalogs.some((catalog) => catalog.id === currentId)
           ? currentId
-          : result.catalogs[0]?.id ?? defaultCatalog.id;
+          : nextCatalogs[0]?.id ?? defaultCatalog.id;
         if (nextSelectedId !== currentId) {
           resetCatalogSelectionState();
           selectedCatalogIdRef.current = nextSelectedId;
@@ -106,11 +136,16 @@ export function LibraryScreen() {
       })
       .catch(() => {
         if (!cancelled) {
-          setCatalogs([defaultCatalog]);
-          if (selectedCatalogIdRef.current !== defaultCatalog.id) {
+          const nextCatalogs = mergeWithSessionLocalCatalogs([defaultCatalog]);
+          setCatalogs(nextCatalogs);
+          const currentId = selectedCatalogIdRef.current;
+          const nextSelectedId = nextCatalogs.some((catalog) => catalog.id === currentId)
+            ? currentId
+            : nextCatalogs[0]?.id ?? defaultCatalog.id;
+          if (nextSelectedId !== currentId) {
             resetCatalogSelectionState();
-            selectedCatalogIdRef.current = defaultCatalog.id;
-            setSelectedCatalogId(defaultCatalog.id);
+            selectedCatalogIdRef.current = nextSelectedId;
+            setSelectedCatalogId(nextSelectedId);
           }
           setCatalogLoadFailed(true);
         }
@@ -182,6 +217,16 @@ export function LibraryScreen() {
     saveRecords(nextRecords).catch(() => {
       Alert.alert('保存失败', '本次修改没有写入本地存储，请稍后再试。');
     });
+  }
+
+  function addCatalogToState(definition: StoredComicCatalogDefinition) {
+    const catalog = createCatalogFromDefinition(definition);
+    sessionLocalCatalogsRef.current.delete(catalog.id);
+    sessionLocalCatalogsRef.current.set(catalog.id, catalog);
+    setCatalogs((current) => [catalog, ...current.filter((candidate) => candidate.id !== catalog.id)]);
+    selectedCatalogIdRef.current = catalog.id;
+    setSelectedCatalogId(catalog.id);
+    resetCatalogSelectionState();
   }
 
   function updateIssue(issue: ComicIssue, patch: Parameters<typeof mergeRecord>[2]) {
@@ -270,6 +315,37 @@ export function LibraryScreen() {
       Alert.alert('导入完成', '收藏状态已经更新到本机。');
     } catch (error) {
       Alert.alert('导入失败', error instanceof Error ? error.message : '无法解析 JSON。');
+    }
+  }
+
+  async function handleCreateCatalog(definition: StoredComicCatalogDefinition) {
+    try {
+      const localDefinitions = await upsertLocalCatalogDefinition(definition);
+      addCatalogToState(localDefinitions.find((catalog) => catalog.id === definition.id) ?? definition);
+      setCatalogEditorOpen(false);
+      setToolsOpen(false);
+    } catch {
+      Alert.alert('保存失败', '目录没有写入本地存储，请稍后再试。');
+    }
+  }
+
+  function handleExportCurrentCatalog() {
+    if (currentCatalog.source.type !== 'local') {
+      Alert.alert('暂不支持导出', '第一版只导出本机创建或导入的目录。');
+      return;
+    }
+
+    setBackupText(exportCatalogDefinition(currentCatalog.source.definition));
+  }
+
+  async function handleImportCatalog() {
+    try {
+      const definition = parseImportedCatalogDefinition(backupText);
+      const localDefinitions = await upsertLocalCatalogDefinition(definition);
+      addCatalogToState(localDefinitions.find((catalog) => catalog.id === definition.id) ?? definition);
+      Alert.alert('导入完成', '目录已经保存到本机。');
+    } catch (error) {
+      Alert.alert('导入失败', error instanceof Error ? error.message : '无法导入目录 JSON。');
     }
   }
 
@@ -434,44 +510,22 @@ export function LibraryScreen() {
         </View>
       </View>
 
-      <Modal animationType="fade" transparent visible={toolsOpen} onRequestClose={() => setToolsOpen(false)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.toolsSheet}>
-            <View style={styles.toolsHeader}>
-              <View>
-                <Text style={styles.eyebrow}>本地数据</Text>
-                <Text style={styles.toolsTitle}>备份工具</Text>
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="关闭备份工具"
-                onPress={() => setToolsOpen(false)}
-                style={styles.closeButton}
-              >
-                <MaterialCommunityIcons name="close" size={20} color={colors.white} />
-              </Pressable>
-            </View>
-            <View style={styles.backupActions}>
-              <Pressable style={styles.secondaryButton} onPress={handleExport}>
-                <MaterialCommunityIcons name="download-box-outline" size={16} color={colors.shelfDark} />
-                <Text style={styles.secondaryText}>生成备份</Text>
-              </Pressable>
-              <Pressable style={styles.secondaryButton} onPress={handleImport}>
-                <MaterialCommunityIcons name="upload-box-outline" size={16} color={colors.shelfDark} />
-                <Text style={styles.secondaryText}>导入备份</Text>
-              </Pressable>
-            </View>
-            <TextInput
-              multiline
-              value={backupText}
-              onChangeText={setBackupText}
-              placeholder="备份 JSON 会显示在这里，也可以粘贴旧备份再导入"
-              placeholderTextColor="#8b8173"
-              style={styles.backupInput}
-            />
-          </View>
-        </View>
-      </Modal>
+      <ToolsModal
+        visible={toolsOpen}
+        backupText={backupText}
+        onChangeBackupText={setBackupText}
+        onClose={() => setToolsOpen(false)}
+        onCreateCatalog={() => setCatalogEditorOpen(true)}
+        onExportRecords={handleExport}
+        onImportRecords={handleImport}
+        onExportCurrentCatalog={handleExportCurrentCatalog}
+        onImportCatalog={handleImportCatalog}
+      />
+      <LocalCatalogEditorModal
+        visible={catalogEditorOpen}
+        onClose={() => setCatalogEditorOpen(false)}
+        onSave={handleCreateCatalog}
+      />
 
       <IssueDetailModal
         issue={selectedIssue}
@@ -760,75 +814,5 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 14,
     fontWeight: '700',
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(59, 29, 18, 0.42)',
-  },
-  toolsSheet: {
-    width: '100%',
-    maxWidth: 560,
-    alignSelf: 'center',
-    borderTopLeftRadius: radii.md,
-    borderTopRightRadius: radii.md,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: colors.lineStrong,
-    padding: 16,
-    paddingBottom: 24,
-    backgroundColor: colors.paperWarm,
-  },
-  toolsHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  toolsTitle: {
-    color: colors.ink,
-    fontSize: 24,
-    fontWeight: '900',
-  },
-  closeButton: {
-    width: 38,
-    height: 38,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.md,
-    backgroundColor: colors.shelf,
-  },
-  backupActions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 8,
-  },
-  secondaryButton: {
-    flex: 1,
-    height: 38,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.lineStrong,
-    backgroundColor: colors.cream,
-  },
-  secondaryText: {
-    color: colors.ink,
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  backupInput: {
-    minHeight: 120,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.lineStrong,
-    padding: 10,
-    color: colors.ink,
-    backgroundColor: colors.cream,
-    fontSize: 12,
-    textAlignVertical: 'top',
   },
 });
