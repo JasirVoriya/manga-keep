@@ -3,7 +3,17 @@
   "minimumVersion": "1.0.0",
   "title": "发现新版本",
   "message": "新版本优化了封面识别和收藏体验，建议更新后继续使用。",
-  "androidUrl": "https://gitee.com/YOUR_NAME/comic-guests/releases/download/v1.1.0/comic-guests-1.1.0.apk",
+  "updatePageUrl": "https://gitee.com/YOUR_NAME/comic-guests/releases/tag/v1.1.0",
+  "platforms": {
+    "android": {
+      "apkUrl": "https://gitee.com/YOUR_NAME/comic-guests/releases/download/v1.1.0/comic-guests-1.1.0.apk",
+      "storeUrl": "https://play.google.com/store/apps/details?id=com.comicguests.app"
+    },
+    "ios": {
+      "testFlightUrl": "https://testflight.apple.com/join/YOUR_CODE",
+      "appStoreUrl": "https://apps.apple.com/app/idYOUR_APP_ID"
+    }
+  },
   "downloadUrl": "https://gitee.com/YOUR_NAME/comic-guests/releases/tag/v1.1.0",
   "releaseNotesUrl": "https://gitee.com/YOUR_NAME/comic-guests/releases/tag/v1.1.0"
 }

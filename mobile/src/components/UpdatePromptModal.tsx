@@ -10,13 +10,37 @@ type Props = {
 };
 
 function getUpdateUrl(updateInfo: AppUpdateInfo) {
+  if (updateInfo.updatePageUrl) {
+    return updateInfo.updatePageUrl;
+  }
+
   if (Platform.OS === 'ios') {
-    return updateInfo.iosUrl ?? updateInfo.downloadUrl ?? updateInfo.releaseNotesUrl;
+    return (
+      updateInfo.platforms?.ios?.appStoreUrl ??
+      updateInfo.platforms?.ios?.testFlightUrl ??
+      updateInfo.iosUrl ??
+      updateInfo.downloadUrl ??
+      updateInfo.releaseNotesUrl
+    );
   }
   if (Platform.OS === 'android') {
-    return updateInfo.androidUrl ?? updateInfo.downloadUrl ?? updateInfo.releaseNotesUrl;
+    return (
+      updateInfo.platforms?.android?.storeUrl ??
+      updateInfo.platforms?.android?.apkUrl ??
+      updateInfo.androidUrl ??
+      updateInfo.downloadUrl ??
+      updateInfo.releaseNotesUrl
+    );
   }
-  return updateInfo.downloadUrl ?? updateInfo.releaseNotesUrl ?? updateInfo.iosUrl ?? updateInfo.androidUrl;
+
+  return (
+    updateInfo.downloadUrl ??
+    updateInfo.releaseNotesUrl ??
+    updateInfo.platforms?.android?.storeUrl ??
+    updateInfo.platforms?.ios?.appStoreUrl ??
+    updateInfo.androidUrl ??
+    updateInfo.iosUrl
+  );
 }
 
 export function UpdatePromptModal({ updateInfo, visible, onDismiss }: Props) {

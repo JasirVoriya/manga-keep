@@ -43,7 +43,18 @@
           "priority": 2
         }
       ],
-      "updateManifestUrl": "https://gitee.com/YOUR_NAME/comic-guests/raw/master/release/version.json"
+      "updateManifestSources": [
+        {
+          "id": "gitee",
+          "manifestUrl": "https://gitee.com/YOUR_NAME/comic-guests/raw/master/release/version.json",
+          "priority": 1
+        },
+        {
+          "id": "github",
+          "manifestUrl": "https://raw.githubusercontent.com/YOUR_NAME/YOUR_REPO/main/release/version.json",
+          "priority": 2
+        }
+      ]
     }
   }
 }
