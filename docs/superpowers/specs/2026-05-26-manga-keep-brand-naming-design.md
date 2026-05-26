@@ -21,13 +21,13 @@
 
 - 中文显示名：`集漫`
 - 完整说明名：`集漫：漫画杂志收藏册`
-- 英文名：`Jiman`
-- 仓库名：`jiman`
-- Expo slug：`jiman`
-- iOS bundle identifier：`com.jiman.app`
-- Android package：`com.jiman.app`
-- 导出 JSON `app` 字段：`jiman`
-- 本地存储 key 前缀：`jiman`
+- 英文名：`MangaKeep`
+- 仓库名：`manga-keep`
+- Expo slug：`manga-keep`
+- iOS bundle identifier：`com.mangakeep.app`
+- Android package：`com.mangakeep.app`
+- 导出 JSON `app` 字段：`manga-keep`
+- 本地存储 key 前缀：`manga-keep`
 
 App 内第一屏、系统桌面和图标旁只显示 `集漫`。README、发布说明、更新
 中心、首次介绍和应用商店描述使用 `集漫：漫画杂志收藏册`，避免用户误解
@@ -50,8 +50,8 @@ App 品牌名的一部分。
 
 ## 技术标识策略
 
-所有面向新版本的配置和数据标识都统一为 `jiman`。实现时需要同步更新以下
-位置：
+所有面向新版本的配置和数据标识都统一为 `manga-keep`。实现时需要同步更新
+以下位置：
 
 - Expo 配置中的 `name`、`slug`、`ios.bundleIdentifier` 和
   `android.package`。
@@ -91,7 +91,7 @@ App 品牌名的一部分。
 
 - App 名：`集漫`
 - Header 辅助文案：`把那些年追过的漫刊，好好收藏起来`。
-- README 标题：`集漫：属于漫画杂志收藏党的数字书架`。
+- README 标题：`集漫：给漫刊收藏者的数字书架`。
 - 更新弹窗和发布页：使用 `集漫` 指代 App。
 - 导出文件说明：使用 `集漫收藏备份` 或 `集漫目录备份`。
 
@@ -108,7 +108,7 @@ App 品牌名的一部分。
 
 ## 数据流
 
-新版本的数据流以 `jiman` 为唯一应用标识。收藏状态和本地目录写入新的
+新版本的数据流以 `manga-keep` 为唯一应用标识。收藏状态和本地目录写入新的
 `AsyncStorage` key，导出 JSON 也写入新的 `app` 字段。导入时只接受新
 格式或不依赖旧品牌字段的结构化数据。
 
@@ -121,8 +121,8 @@ App 品牌名的一部分。
 失败提示，也不需要提示用户选择是否迁移旧数据。
 
 导入旧备份时，如果备份带有不被接受的旧 `app` 标识，App 必须返回清晰的
-导入失败原因。错误文案应说明当前版本只接受 `jiman` 格式备份，避免用户
-误以为 JSON 损坏。
+导入失败原因。错误文案应说明当前版本只接受 `manga-keep` 格式备份，避免
+用户误以为 JSON 损坏。
 
 ## 测试与验证
 
