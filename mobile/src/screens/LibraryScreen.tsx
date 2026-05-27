@@ -354,7 +354,7 @@ export function LibraryScreen() {
       <View style={styles.shell}>
         <View style={styles.header}>
           <View style={styles.titleBlock}>
-            <Text style={styles.eyebrow}>漫画收藏记录</Text>
+            <Text style={styles.eyebrow}>把那些年追过的漫刊，好好收藏起来</Text>
             <Text style={styles.appName}>{currentCatalog.name}</Text>
           </View>
           <Pressable

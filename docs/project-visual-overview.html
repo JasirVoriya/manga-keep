@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>漫集 MangaKeep 项目可视化总览</title>
+  <style>
+    :root {
+      --ink: #231f20;
+      --muted: #6b625d;
+      --paper: #f7f1e7;
+      --sheet: #fffaf1;
+      --line: #d8c9b6;
+      --line-strong: #a98f73;
+      --red: #b93632;
+      --red-dark: #7d2527;
+      --green: #236b55;
+      --green-soft: #dceee5;
+      --blue: #275f8f;
+      --blue-soft: #dbeaf6;
+      --gold: #b98218;
+      --gold-soft: #f5e5bd;
+      --plum: #5c416a;
+      --shadow: 0 18px 50px rgba(54, 38, 24, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(35, 31, 32, 0.035) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(35, 31, 32, 0.035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 24px 24px;
+      font-family: "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC",
+        Georgia, serif;
+      letter-spacing: 0;
+    }
+
+    a {
+      color: inherit;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 4px;
+    }
+
+    .page {
+      min-height: 100vh;
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+      gap: 28px;
+      align-items: end;
+      padding: 44px clamp(18px, 5vw, 72px) 28px;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at 8% 18%, rgba(185, 54, 50, 0.16), transparent 34%),
+        linear-gradient(135deg, rgba(255, 250, 241, 0.94), rgba(247, 241, 231, 0.9));
+    }
+
+    .kicker {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      color: var(--red-dark);
+      background: rgba(255, 250, 241, 0.82);
+      font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 880px;
+      margin: 18px 0 14px;
+      font-size: clamp(38px, 7vw, 82px);
+      line-height: 0.98;
+      font-weight: 900;
+    }
+
+    .lead {
+      max-width: 740px;
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(17px, 2.2vw, 22px);
+      line-height: 1.7;
+    }
+
+    .source-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .source-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--sheet);
+      font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      min-height: 112px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 250, 241, 0.9);
+      box-shadow: var(--shadow);
+    }
+
+    .metric strong {
+      display: block;
+      color: var(--red-dark);
+      font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      padding: 8px clamp(18px, 5vw, 72px);
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 250, 241, 0.94);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav a {
+      flex: 0 0 auto;
+      padding: 9px 12px;
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      color: var(--ink);
+      background: var(--gold-soft);
+    }
+
+    main {
+      padding: 32px clamp(18px, 5vw, 72px) 64px;
+    }
+
+    section {
+      margin-top: 36px;
+    }
+
+    .section-title {
+      display: flex;
+      gap: 16px;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      border-bottom: 2px solid var(--ink);
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.08;
+    }
+
+    .section-note {
+      max-width: 560px;
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: right;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .panel,
+    .feature,
+    .stage,
+    .risk {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--sheet);
+      box-shadow: 0 10px 30px rgba(54, 38, 24, 0.08);
+    }
+
+    .panel {
+      padding: 22px;
+    }
+
+    .panel h3,
+    .feature h3,
+    .stage h3,
+    .risk h3 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    .panel p,
+    .feature p,
+    .stage p,
+    .risk p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tag.done {
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .tag.partial {
+      color: var(--gold);
+      background: var(--gold-soft);
+    }
+
+    .tag.missing {
+      color: var(--red-dark);
+      background: #f1d4ce;
+    }
+
+    .feature {
+      position: relative;
+      overflow: hidden;
+      padding: 18px;
+    }
+
+    .feature::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 6px;
+      background: var(--green);
+    }
+
+    .feature.partial::before {
+      background: var(--gold);
+    }
+
+    .feature.missing::before {
+      background: var(--red);
+    }
+
+    .feature h3 {
+      padding-left: 10px;
+    }
+
+    .feature p {
+      padding-left: 10px;
+    }
+
+    .matrix {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr 0.9fr;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--sheet);
+    }
+
+    .matrix div {
+      min-height: 58px;
+      padding: 14px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      line-height: 1.55;
+    }
+
+    .matrix div:nth-child(3n) {
+      border-right: 0;
+    }
+
+    .matrix .head {
+      color: var(--sheet);
+      background: var(--ink);
+      font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .diagram {
+      min-height: 480px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(219, 234, 246, 0.72), rgba(255, 250, 241, 0.92)),
+        var(--sheet);
+      overflow: hidden;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .node rect {
+      fill: #fffaf1;
+      stroke: #7d2527;
+      stroke-width: 2;
+      rx: 8;
+    }
+
+    .node text {
+      fill: #231f20;
+      font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .arrow {
+      stroke: #5c416a;
+      stroke-width: 2;
+      fill: none;
+      marker-end: url(#arrowhead);
+    }
+
+    .stage {
+      padding: 18px;
+      border-left: 6px solid var(--blue);
+    }
+
+    .stage strong {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      margin-right: 8px;
+      border-radius: 50%;
+      color: var(--sheet);
+      background: var(--blue);
+      font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+    }
+
+    .priority {
+      display: grid;
+      grid-template-columns: 0.8fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .priority-col {
+      min-height: 240px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--sheet);
+    }
+
+    .priority-col h3 {
+      margin: 0 0 12px;
+      font-family: "Avenir Next", "Trebuchet MS", sans-serif;
+      font-size: 15px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .priority-col ul {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .priority-col li {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(247, 241, 231, 0.6);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .risk {
+      padding: 18px;
+    }
+
+    .footer {
+      margin-top: 42px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 980px) {
+      .masthead,
+      .architecture,
+      .priority,
+      .grid.two,
+      .grid.three {
+        grid-template-columns: 1fr;
+      }
+
+      .section-title {
+        display: block;
+      }
+
+      .section-note {
+        max-width: none;
+        text-align: left;
+      }
+
+      .matrix {
+        grid-template-columns: 1fr;
+      }
+
+      .matrix div,
+      .matrix div:nth-child(3n) {
+        border-right: 0;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .masthead {
+        padding-top: 28px;
+      }
+
+      .scoreboard {
+        grid-template-columns: 1fr;
+      }
+
+      .matrix .head:nth-child(2),
+      .matrix .head:nth-child(3) {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="masthead">
+      <div>
+        <div class="kicker">Project visual brief · 2026-05-26</div>
+        <h1>漫集 MangaKeep 项目可视化总览</h1>
+        <p class="lead">
+          这是一份面向项目 owner 和后续开发者的可视化说明：把当前功能、
+          未完成缺口、无服务器数据方案、运行时架构和下一步优先级放在同一页里。
+        </p>
+        <div class="source-links" aria-label="详细文档入口">
+          <a href="./app-feature-inventory.zh.md">查看功能盘点 Markdown</a>
+          <a href="./technical-architecture.zh.md">查看技术架构 Markdown</a>
+          <a href="./remote-catalog-data.md">远程目录数据设计</a>
+          <a href="./release-and-updates.md">发布与更新说明</a>
+        </div>
+      </div>
+      <aside class="scoreboard" aria-label="项目状态摘要">
+        <div class="metric">
+          <strong>44/44</strong>
+          <span>当前逻辑测试覆盖目录、存储、更新检测等核心模块。</span>
+        </div>
+        <div class="metric">
+          <strong>3 源</strong>
+          <span>内置目录、本地目录、公共静态目录共同组成目录层。</span>
+        </div>
+        <div class="metric">
+          <strong>0 后端</strong>
+          <span>公共数据走静态 JSON 和图片；用户私有数据保留在本机。</span>
+        </div>
+        <div class="metric">
+          <strong>已定名</strong>
+          <span>品牌身份已统一为漫集 / MangaKeep / manga-keep。</span>
+        </div>
+      </aside>
+    </header>
+
+    <nav class="nav" aria-label="页面导航">
+      <a href="#status">功能状态</a>
+      <a href="#requirements">需求对照</a>
+      <a href="#architecture">架构图</a>
+      <a href="#flow">数据流</a>
+      <a href="#next">下一步</a>
+      <a href="#risks">风险</a>
+    </nav>
+
+    <main>
+      <section id="status">
+        <div class="section-title">
+          <h2>功能状态</h2>
+          <p class="section-note">
+            绿色代表已经形成用户可见闭环；黄色代表链路或模型已打通但还差真实配置、
+            UI 或发布资产；红色代表还没有进入当前实现。
+          </p>
+        </div>
+        <div class="grid three">
+          <article class="feature done">
+            <h3>期刊浏览与统计</h3>
+            <p>网格浏览、目录切换、进度条、已有/缺本/想要统计已经可用。</p>
+            <div class="status-row"><span class="tag done">已实现</span></div>
+          </article>
+          <article class="feature done">
+            <h3>收藏记录</h3>
+            <p>状态、品相、备注和更新时间保存在 AsyncStorage，重启后仍保留。</p>
+            <div class="status-row"><span class="tag done">已实现</span></div>
+          </article>
+          <article class="feature done">
+            <h3>筛选搜索与批量</h3>
+            <p>按状态筛选、按期号搜索、长按进入批量模式和批量改状态已完成。</p>
+            <div class="status-row"><span class="tag done">已实现</span></div>
+          </article>
+          <article class="feature done">
+            <h3>本地目录</h3>
+            <p>用户可创建、导入、导出本地目录，并和公共目录合并展示。</p>
+            <div class="status-row"><span class="tag done">已实现</span></div>
+          </article>
+          <article class="feature partial">
+            <h3>公共目录源</h3>
+            <p>多源 fallback、registry、manifest、redirect 已完成；真实地址仍是占位。</p>
+            <div class="status-row"><span class="tag partial">部分完成</span></div>
+          </article>
+          <article class="feature partial">
+            <h3>远程封面</h3>
+            <p>模型支持远程 coverUrl；当前仍保留并引用包内封面资源。</p>
+            <div class="status-row"><span class="tag partial">迁移中</span></div>
+          </article>
+          <article class="feature partial">
+            <h3>自更新检测</h3>
+            <p>多版本清单源、强制更新和平台链接已完成；真实更新页待发布。</p>
+            <div class="status-row"><span class="tag partial">待配置</span></div>
+          </article>
+          <article class="feature done">
+            <h3>品牌统一</h3>
+            <p>配置、存储、导出和文档示例已统一为漫集 / MangaKeep / manga-keep。</p>
+            <div class="status-row"><span class="tag done">已对齐</span></div>
+          </article>
+          <article class="feature missing">
+            <h3>文件式导入导出</h3>
+            <p>当前仍是复制粘贴 JSON；系统文件选择、分享和导入预览还没做。</p>
+            <div class="status-row"><span class="tag missing">未实现</span></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="requirements">
+        <div class="section-title">
+          <h2>原始需求对照</h2>
+          <p class="section-note">把之前的关键诉求压成一张状态表，方便判断下一步先补哪里。</p>
+        </div>
+        <div class="matrix" role="table" aria-label="原始需求状态表">
+          <div class="head" role="columnheader">需求</div>
+          <div class="head" role="columnheader">当前状态</div>
+          <div class="head" role="columnheader">还差什么</div>
+
+          <div>封面不要打进安装包，改用图床或静态托管</div>
+          <div><span class="tag partial">部分支持</span> 远程封面模型已打通</div>
+          <div>发布真实封面源，验证真机加载，再移除本地封面 require</div>
+
+          <div>支持任意期刊统计</div>
+          <div><span class="tag done">基础支持</span> 本地目录和公共 manifest 已支持</div>
+          <div>补逐期编辑、不连续编号、合刊/增刊、年份刊期</div>
+
+          <div>没有服务器，也不付费</div>
+          <div><span class="tag done">架构支持</span> 静态 JSON + 本地存储</div>
+          <div>把占位源换成真实 Gitee/GitHub 静态资源</div>
+
+          <div>自己支持 App 更新检测和下载</div>
+          <div><span class="tag partial">检测支持</span> 下载入口待发布</div>
+          <div>补真实 version.json、更新中心页面和 APK release 资产</div>
+
+          <div>品牌身份已统一为漫集 / MangaKeep / manga-keep</div>
+          <div><span class="tag partial">已定名</span> 漫集 / MangaKeep / manga-keep</div>
+          <div>剩余重点是真实远程源、预览验证和发布资产</div>
+        </div>
+      </section>
+
+      <section id="architecture">
+        <div class="section-title">
+          <h2>技术架构</h2>
+          <p class="section-note">
+            当前是单屏 Expo App，没有后端服务。远程公共数据来自静态托管，
+            用户收藏和本地目录留在设备本机。
+          </p>
+        </div>
+        <div class="architecture">
+          <div class="diagram" aria-label="漫集 MangaKeep 整体技术架构图">
+            <svg viewBox="0 0 760 500" role="img" aria-label="漫集 MangaKeep 整体架构图">
+              <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+                  <path d="M0,0 L10,4 L0,8 Z" fill="#5c416a"></path>
+                </marker>
+              </defs>
+              <g class="node">
+                <rect x="280" y="22" width="200" height="56"></rect>
+                <text x="380" y="56" text-anchor="middle">Expo React Native App</text>
+
+                <rect x="286" y="118" width="188" height="56"></rect>
+                <text x="380" y="152" text-anchor="middle">LibraryScreen</text>
+
+                <rect x="34" y="224" width="170" height="62"></rect>
+                <text x="119" y="250" text-anchor="middle">UI Components</text>
+                <text x="119" y="270" text-anchor="middle">弹窗 / 卡片 / 工具</text>
+
+                <rect x="230" y="224" width="170" height="62"></rect>
+                <text x="315" y="250" text-anchor="middle">Catalog Store</text>
+                <text x="315" y="270" text-anchor="middle">目录聚合</text>
+
+                <rect x="426" y="224" width="170" height="62"></rect>
+                <text x="511" y="250" text-anchor="middle">Storage</text>
+                <text x="511" y="270" text-anchor="middle">收藏 / 本地目录</text>
+
+                <rect x="556" y="118" width="170" height="56"></rect>
+                <text x="641" y="152" text-anchor="middle">Update Check</text>
+
+                <rect x="118" y="366" width="170" height="62"></rect>
+                <text x="203" y="392" text-anchor="middle">Bundled Catalog</text>
+                <text x="203" y="412" text-anchor="middle">默认知音漫客</text>
+
+                <rect x="314" y="366" width="170" height="62"></rect>
+                <text x="399" y="392" text-anchor="middle">Static Hosting</text>
+                <text x="399" y="412" text-anchor="middle">registry / manifest / covers</text>
+
+                <rect x="510" y="366" width="170" height="62"></rect>
+                <text x="595" y="392" text-anchor="middle">AsyncStorage</text>
+                <text x="595" y="412" text-anchor="middle">设备本地私有数据</text>
+              </g>
+              <path class="arrow" d="M380 78 L380 118"></path>
+              <path class="arrow" d="M380 174 L145 224"></path>
+              <path class="arrow" d="M380 174 L315 224"></path>
+              <path class="arrow" d="M380 174 L511 224"></path>
+              <path class="arrow" d="M474 146 L556 146"></path>
+              <path class="arrow" d="M315 286 L203 366"></path>
+              <path class="arrow" d="M315 286 L399 366"></path>
+              <path class="arrow" d="M511 286 L595 366"></path>
+              <path class="arrow" d="M641 174 L399 366"></path>
+            </svg>
+          </div>
+          <div class="grid">
+            <article class="panel">
+              <h3>UI 层</h3>
+              <p>`LibraryScreen` 统一协调目录、记录、筛选、批量和弹窗；组件保持展示和输入职责。</p>
+            </article>
+            <article class="panel">
+              <h3>数据层</h3>
+              <p>`catalogRegistry` 拉远程 registry/manifest，`catalogStore` 合并本地、公共和内置目录。</p>
+            </article>
+            <article class="panel">
+              <h3>持久化层</h3>
+              <p>`collectionStorage` 保存收藏记录，`localCatalogStorage` 保存本地目录定义。</p>
+            </article>
+            <article class="panel">
+              <h3>更新层</h3>
+              <p>`versionCheck` 读取多源版本清单，比较版本并输出更新弹窗所需信息。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="flow">
+        <div class="section-title">
+          <h2>运行时数据流</h2>
+          <p class="section-note">启动后核心请求都是 best-effort，远程失败不阻塞本地收藏使用。</p>
+        </div>
+        <div class="grid two">
+          <article class="stage">
+            <h3><strong>1</strong>启动 App</h3>
+            <p>Expo 注册 `App`，渲染 `LibraryScreen`，界面先用内置默认目录兜底。</p>
+          </article>
+          <article class="stage">
+            <h3><strong>2</strong>加载本地状态</h3>
+            <p>从 AsyncStorage 读取收藏记录和本地目录定义，只保留带目录 ID 的限定 key。</p>
+          </article>
+          <article class="stage">
+            <h3><strong>3</strong>拉公共目录</h3>
+            <p>按 `catalogSources.priority` 请求 registry，失败后尝试下一源，并解析 manifest。</p>
+          </article>
+          <article class="stage">
+            <h3><strong>4</strong>合并目录</h3>
+            <p>内置目录、远程目录、本地目录合并；同 ID 时本地目录优先级最高。</p>
+          </article>
+          <article class="stage">
+            <h3><strong>5</strong>检查更新</h3>
+            <p>按 `updateManifestSources.priority` 请求 version.json，比较 `latestVersion` 和当前版本。</p>
+          </article>
+          <article class="stage">
+            <h3><strong>6</strong>用户操作</h3>
+            <p>浏览、筛选、批量标记、编辑详情、导入导出都会回写本地 AsyncStorage。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="next">
+        <div class="section-title">
+          <h2>下一步优先级</h2>
+          <p class="section-note">优先把“能分发、能更新、能远程加载封面”的闭环打通。</p>
+        </div>
+        <div class="priority">
+          <div class="priority-col">
+            <h3>必须补</h3>
+            <ul>
+              <li>配置真实公共目录源和真实 `version.json`。</li>
+              <li>发布静态更新中心页面和 Android APK 下载入口。</li>
+              <li>统一 App 名、包名、仓库名、图标和 JSON 标识。</li>
+              <li>补同 ID 目录导入冲突确认 UI。</li>
+            </ul>
+          </div>
+          <div class="priority-col">
+            <h3>建议补</h3>
+            <ul>
+              <li>真机验证远程封面后，移除包内封面依赖。</li>
+              <li>接入系统文件导入导出和分享面板。</li>
+              <li>增加范围批量操作，例如 `120-160`。</li>
+              <li>增加目录管理页，支持编辑和删除本地目录。</li>
+            </ul>
+          </div>
+          <div class="priority-col">
+            <h3>以后再说</h3>
+            <ul>
+              <li>账号与云同步。</li>
+              <li>App 内上传封面或公共目录。</li>
+              <li>完整逐期编辑器。</li>
+              <li>淘书辅助和订单管理。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="risks">
+        <div class="section-title">
+          <h2>架构风险</h2>
+          <p class="section-note">这些不是立刻阻塞，但继续扩展前最好心里有数。</p>
+        </div>
+        <div class="grid three">
+          <article class="risk">
+            <h3>远程源没有缓存</h3>
+            <p>公共目录源失败时只能回退内置目录。后续可缓存上一次成功的 registry 和 manifest。</p>
+          </article>
+          <article class="risk">
+            <h3>远程 JSON 没有签名</h3>
+            <p>现在主要靠 schema 校验。后续可加 hash、签名或可信域名策略。</p>
+          </article>
+          <article class="risk">
+            <h3>单屏职责变重</h3>
+            <p>`LibraryScreen` 承担很多状态。功能增多后可拆 `useCatalogStore` 等 hooks。</p>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer">
+        数据来源：当前代码、`docs/app-feature-inventory.zh.md`、
+        `docs/technical-architecture.zh.md`、远程目录设计和发布更新说明。
+        这个 HTML 是静态文档，不需要构建或联网。
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

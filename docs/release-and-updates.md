@@ -27,8 +27,8 @@
 5. 等待任务完成后，在仓库 `Releases` 页面下载：
 
 ```text
-comic-guests-v1.0.0.apk
-comic-guests-v1.0.0-unsigned.ipa
+manga-keep-v1.0.0.apk
+manga-keep-v1.0.0-unsigned.ipa
 ```
 
 该 APK 是 GitHub Actions 生成的 Release 包，已经内置 JS bundle，适合自己
@@ -56,14 +56,14 @@ eas build --platform android --profile production
 3. 下载构建产物，把 APK 重命名为类似：
 
 ```text
-comic-guests-1.1.0.apk
+manga-keep-1.1.0.apk
 ```
 
 4. 在 Gitee 仓库创建 Release：
 
 ```text
 Tag: v1.1.0
-Asset: comic-guests-1.1.0.apk
+Asset: manga-keep-1.1.0.apk
 ```
 
 Gitee 官方说明里，Release 附件适合上传制作好的安装包、补丁、使用文档等二进制文件。
@@ -76,27 +76,27 @@ Gitee 官方说明里，Release 附件适合上传制作好的安装包、补丁
   "minimumVersion": "1.0.0",
   "title": "发现新版本",
   "message": "新版本优化了封面识别和收藏体验，建议更新后继续使用。",
-  "updatePageUrl": "https://gitee.com/YOUR_NAME/comic-guests/releases/tag/v1.1.0",
+  "updatePageUrl": "https://gitee.com/YOUR_NAME/manga-keep/releases/tag/v1.1.0",
   "platforms": {
     "android": {
-      "apkUrl": "https://gitee.com/YOUR_NAME/comic-guests/releases/download/v1.1.0/comic-guests-1.1.0.apk",
-      "storeUrl": "https://play.google.com/store/apps/details?id=com.comicguests.app"
+      "apkUrl": "https://gitee.com/YOUR_NAME/manga-keep/releases/download/v1.1.0/manga-keep-1.1.0.apk",
+      "storeUrl": "https://play.google.com/store/apps/details?id=com.mangakeep.app"
     },
     "ios": {
       "testFlightUrl": "https://testflight.apple.com/join/YOUR_CODE",
       "appStoreUrl": "https://apps.apple.com/app/idYOUR_APP_ID"
     }
   },
-  "downloadUrl": "https://gitee.com/YOUR_NAME/comic-guests/releases/tag/v1.1.0",
-  "releaseNotesUrl": "https://gitee.com/YOUR_NAME/comic-guests/releases/tag/v1.1.0"
+  "downloadUrl": "https://gitee.com/YOUR_NAME/manga-keep/releases/tag/v1.1.0",
+  "releaseNotesUrl": "https://gitee.com/YOUR_NAME/manga-keep/releases/tag/v1.1.0"
 }
 ```
 
 6. 准备两个版本清单地址。第一个可以用 Gitee raw，第二个可以用 GitHub raw：
 
 ```text
-https://gitee.com/YOUR_NAME/comic-guests/raw/master/release/version.json
-https://raw.githubusercontent.com/YOUR_NAME/YOUR_REPO/main/release/version.json
+https://gitee.com/YOUR_NAME/manga-keep/raw/master/release/version.json
+https://raw.githubusercontent.com/YOUR_NAME/manga-keep/main/release/version.json
 ```
 
 7. 在 `mobile/app.json` 里配置多个版本清单源：
@@ -106,12 +106,12 @@ https://raw.githubusercontent.com/YOUR_NAME/YOUR_REPO/main/release/version.json
   "updateManifestSources": [
     {
       "id": "gitee",
-      "manifestUrl": "https://gitee.com/YOUR_NAME/comic-guests/raw/master/release/version.json",
+      "manifestUrl": "https://gitee.com/YOUR_NAME/manga-keep/raw/master/release/version.json",
       "priority": 1
     },
     {
       "id": "github",
-      "manifestUrl": "https://raw.githubusercontent.com/YOUR_NAME/YOUR_REPO/main/release/version.json",
+      "manifestUrl": "https://raw.githubusercontent.com/YOUR_NAME/manga-keep/main/release/version.json",
       "priority": 2
     }
   ]
@@ -121,7 +121,7 @@ https://raw.githubusercontent.com/YOUR_NAME/YOUR_REPO/main/release/version.json
 如果你不想公开代码仓库，可以只建一个公开的发布仓库，里面只放
 `release/version.json`、更新中心页面和 Release 附件，不放源码。
 
-App 会过滤 `YOUR_NAME`、`YOUR_REPO` 和 `example.com` 这类占位地址。开发期
+App 会过滤 `YOUR_NAME` 和 `example.com` 这类占位地址。开发期
 没有填真实地址时，它不会一直请求无效 URL。
 
 ## 更新中心页面
@@ -171,7 +171,7 @@ App Store；如果只是你自己的设备，可以走 Ad Hoc 或侧载。当前
 
 ## 强制更新
 
-如果某个旧版本必须升级，把 `minimumVersion` 设置成高于旧版本即可。例如当前 App 是 `1.0.0`：
+如果某个旧版本必须升级，把 `minimumVersion` 设置成高于旧版本即可。例如当前已安装版本是 `1.0.0`：
 
 ```json
 {

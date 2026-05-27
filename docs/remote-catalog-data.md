@@ -16,12 +16,12 @@ App 读取 `mobile/app.json` 中的 `extra.catalogSources`。这是按优先级�
       "catalogSources": [
         {
           "id": "gitee",
-          "registryUrl": "https://gitee.com/YOUR_NAME/manga-shelf-data/raw/master/registry/index.v1.json",
+          "registryUrl": "https://gitee.com/YOUR_NAME/manga-keep-data/raw/master/registry/index.v1.json",
           "priority": 1
         },
         {
           "id": "github",
-          "registryUrl": "https://YOUR_NAME.github.io/manga-shelf-data/registry/index.v1.json",
+          "registryUrl": "https://YOUR_NAME.github.io/manga-keep-data/registry/index.v1.json",
           "priority": 2
         }
       ]
@@ -51,7 +51,7 @@ App 读取 `mobile/app.json` 中的 `extra.catalogSources`。这是按优先级�
 ## 推荐目录结构
 
 ```text
-manga-shelf-data/
+manga-keep-data/
   registry/
     index.v1.json
   catalogs/
@@ -96,7 +96,7 @@ manga-shelf-data/
 {
   "schemaVersion": 1,
   "updatedAt": "2026-05-21T00:00:00.000Z",
-  "redirectUrl": "https://example.com/manga-shelf-data/registry/index.v1.json",
+  "redirectUrl": "https://example.com/manga-keep-data/registry/index.v1.json",
   "catalogs": []
 }
 ```

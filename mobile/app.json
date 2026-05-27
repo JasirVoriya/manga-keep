@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "知音漫客收藏册",
-    "slug": "comic-guests",
+    "name": "漫集",
+    "slug": "manga-keep",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,11 +14,11 @@
     },
     "ios": {
       "buildNumber": "2",
-      "bundleIdentifier": "com.comicguests.app",
+      "bundleIdentifier": "com.mangakeep.app",
       "supportsTablet": true
     },
     "android": {
-      "package": "com.comicguests.app",
+      "package": "com.mangakeep.app",
       "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -34,24 +34,24 @@
       "catalogSources": [
         {
           "id": "gitee",
-          "registryUrl": "https://gitee.com/YOUR_NAME/manga-shelf-data/raw/master/registry/index.v1.json",
+          "registryUrl": "https://gitee.com/YOUR_NAME/manga-keep-data/raw/master/registry/index.v1.json",
           "priority": 1
         },
         {
           "id": "github",
-          "registryUrl": "https://YOUR_NAME.github.io/manga-shelf-data/registry/index.v1.json",
+          "registryUrl": "https://YOUR_NAME.github.io/manga-keep-data/registry/index.v1.json",
           "priority": 2
         }
       ],
       "updateManifestSources": [
         {
           "id": "gitee",
-          "manifestUrl": "https://gitee.com/YOUR_NAME/comic-guests/raw/master/release/version.json",
+          "manifestUrl": "https://gitee.com/YOUR_NAME/manga-keep/raw/master/release/version.json",
           "priority": 1
         },
         {
           "id": "github",
-          "manifestUrl": "https://raw.githubusercontent.com/YOUR_NAME/YOUR_REPO/main/release/version.json",
+          "manifestUrl": "https://raw.githubusercontent.com/YOUR_NAME/manga-keep/main/release/version.json",
           "priority": 2
         }
       ]
