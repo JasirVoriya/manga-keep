@@ -1,11 +1,13 @@
 # Project AI rules
 
-## Global design standards
+## Global project standards
 
-Before making changes that affect UI, UX, visual design, themes, icons,
-illustrations, motion, or page-level layout, read and follow:
+Project-wide standards live under `docs/global-standards/`. Before making
+changes, check that directory for any standards that apply to the work area.
 
-- `docs/global-standards/ui/manga-keep-ui-theme-style.md`
+For example, UI, UX, visual design, themes, icons, illustrations, motion, and
+page-level layout work must follow the standards under
+`docs/global-standards/ui/`.
 
 ## Mobile preview verification
 
