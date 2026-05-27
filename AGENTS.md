@@ -5,9 +5,14 @@
 Project-wide standards live under `docs/global-standards/`. Before making
 changes, check that directory for any standards that apply to the work area.
 
-For example, UI, UX, visual design, themes, icons, illustrations, motion, and
-page-level layout work must follow the standards under
-`docs/global-standards/ui/`.
+Current global standard documents:
+
+- `docs/global-standards/README.md`
+- `docs/global-standards/ui/manga-keep-ui-theme-style.md`
+
+Hard rule: whenever a Markdown document is added to or deleted from
+`docs/global-standards/`, update this list in the same change. Do not leave
+the global standards directory and this AGENTS.md document list out of sync.
 
 ## Mobile preview verification
 
