@@ -40,7 +40,9 @@ import {
   parseImportedCatalogDefinition,
   upsertLocalCatalogDefinition,
 } from '../storage/localCatalogStorage';
-import { colors, radii } from '../styles/theme';
+import { radii } from '../styles/constants';
+import { useTheme } from '../styles/themeContext';
+import type { ThemeTokens } from '../styles/themes/types';
 import type {
   ComicCatalog,
   ComicIssue,
@@ -71,6 +73,14 @@ function distance(touches: NativeTouchEvent['touches']) {
 }
 
 export function LibraryScreen() {
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
+  const colors = {
+    muted: theme.textSecondary,
+    shelfDark: theme.textPrimary,
+    white: theme.textOnBrand
+  };
+
   const { width } = useWindowDimensions();
   const [records, setRecords] = useState<IssueRecordMap>({});
   const [catalogs, setCatalogs] = useState<ComicCatalog[]>([defaultCatalog]);
@@ -552,10 +562,10 @@ export function LibraryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: ThemeTokens) => StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.paper,
+    backgroundColor: theme.background,
   },
   shell: {
     flex: 1,
@@ -576,14 +586,14 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   eyebrow: {
-    color: colors.redDark,
+    color: theme.brand,
     fontSize: 12,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
   appName: {
     marginTop: 4,
-    color: colors.ink,
+    color: theme.textPrimary,
     fontSize: 28,
     lineHeight: 34,
     fontWeight: '900',
@@ -597,11 +607,11 @@ const styles = StyleSheet.create({
     gap: 6,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.lineStrong,
-    backgroundColor: colors.cream,
+    borderColor: theme.borderStrong,
+    backgroundColor: theme.surfaceRaised,
   },
   toolButtonText: {
-    color: colors.ink,
+    color: theme.textPrimary,
     fontSize: 14,
     fontWeight: '900',
   },
@@ -611,11 +621,11 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.lineStrong,
+    borderColor: theme.borderStrong,
     padding: 14,
     paddingRight: 104,
-    backgroundColor: colors.peach,
-    shadowColor: colors.shelfDark,
+    backgroundColor: theme.surfaceSoft,
+    shadowColor: theme.brand,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
@@ -626,13 +636,13 @@ const styles = StyleSheet.create({
     bottom: 14,
   },
   progressNumber: {
-    color: colors.redDark,
+    color: theme.brand,
     fontSize: 44,
     fontWeight: '900',
   },
   progressCaption: {
     marginTop: -4,
-    color: colors.shelfDark,
+    color: theme.textSecondary,
     fontSize: 12,
     fontWeight: '800',
   },
@@ -641,7 +651,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   statLine: {
-    color: colors.shelfDark,
+    color: theme.textSecondary,
     fontSize: 13,
     fontWeight: '800',
   },
@@ -649,13 +659,13 @@ const styles = StyleSheet.create({
     height: 8,
     marginTop: 14,
     borderRadius: radii.md,
-    backgroundColor: 'rgba(255, 250, 240, 0.78)',
+    backgroundColor: theme.surface,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     borderRadius: radii.md,
-    backgroundColor: colors.redDark,
+    backgroundColor: theme.brand,
   },
   controls: {
     gap: 12,
@@ -674,14 +684,14 @@ const styles = StyleSheet.create({
     gap: 8,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.lineStrong,
+    borderColor: theme.borderStrong,
     paddingHorizontal: 12,
-    backgroundColor: colors.cream,
+    backgroundColor: theme.surfaceRaised,
   },
   search: {
     flex: 1,
     height: '100%',
-    color: colors.ink,
+    color: theme.textPrimary,
     fontSize: 15,
   },
   densityButtons: {
@@ -694,21 +704,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.md,
-    backgroundColor: colors.shelf,
+    backgroundColor: theme.brand,
   },
   iconText: {
-    color: colors.paperWarm,
+    color: theme.textOnBrand,
     fontSize: 18,
     fontWeight: '900',
   },
   catalogLine: {
-    color: colors.muted,
+    color: theme.textSecondary,
     fontSize: 12,
     fontWeight: '800',
   },
   catalogWarning: {
     marginBottom: 10,
-    color: colors.redDark,
+    color: theme.danger,
     fontSize: 12,
     fontWeight: '800',
   },
@@ -727,31 +737,31 @@ const styles = StyleSheet.create({
     gap: 5,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.lineStrong,
-    backgroundColor: colors.cream,
+    borderColor: theme.borderStrong,
+    backgroundColor: theme.surfaceRaised,
   },
   batchToggleActive: {
-    borderColor: colors.red,
-    backgroundColor: colors.redDark,
+    borderColor: theme.danger,
+    backgroundColor: theme.danger,
   },
   batchToggleText: {
-    color: colors.ink,
+    color: theme.textPrimary,
     fontSize: 13,
     fontWeight: '900',
   },
   batchToggleTextActive: {
-    color: colors.paperWarm,
+    color: theme.textOnBrand,
   },
   batchBar: {
     gap: 10,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.lineStrong,
+    borderColor: theme.borderStrong,
     padding: 10,
-    backgroundColor: colors.cream,
+    backgroundColor: theme.surfaceRaised,
   },
   batchCount: {
-    color: colors.ink,
+    color: theme.textPrimary,
     fontSize: 13,
     fontWeight: '900',
   },
@@ -768,27 +778,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: colors.lineStrong,
+    borderColor: theme.borderStrong,
     paddingHorizontal: 10,
-    backgroundColor: colors.paperWarm,
+    backgroundColor: theme.surfaceSoft,
   },
   batchPrimary: {
-    borderColor: colors.redDark,
-    backgroundColor: colors.redDark,
+    borderColor: theme.brand,
+    backgroundColor: theme.brand,
   },
   batchButtonText: {
-    color: colors.ink,
+    color: theme.textPrimary,
     fontSize: 12,
     fontWeight: '900',
   },
   batchPrimaryText: {
-    color: colors.paperWarm,
+    color: theme.textOnBrand,
   },
   gridWrap: {
     flex: 1,
     borderTopWidth: 1,
-    borderTopColor: colors.line,
-    backgroundColor: '#fff1e2',
+    borderTopColor: theme.border,
+    backgroundColor: theme.background,
   },
   gridContent: {
     paddingHorizontal: 20,
@@ -805,13 +815,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   emptyTitle: {
-    color: colors.ink,
+    color: theme.textPrimary,
     fontSize: 18,
     fontWeight: '900',
   },
   emptyText: {
     marginTop: 6,
-    color: colors.muted,
+    color: theme.textSecondary,
     fontSize: 14,
     fontWeight: '700',
   },

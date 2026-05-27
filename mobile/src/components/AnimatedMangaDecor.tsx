@@ -1,13 +1,16 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
-import { colors, radii } from '../styles/theme';
+import { radii } from '../styles/constants';
+import { useTheme } from '../styles/themeContext';
+import type { ThemeTokens } from '../styles/themes/types';
 
 type Props = {
   compact?: boolean;
 };
 
 export function AnimatedMangaDecor({ compact = false }: Props) {
+  const { theme } = useTheme();
   const float = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(0)).current;
 
@@ -71,6 +74,8 @@ export function AnimatedMangaDecor({ compact = false }: Props) {
     outputRange: [0.58, 1],
   });
 
+  const styles = getStyles(theme);
+
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Animated.View
@@ -84,11 +89,11 @@ export function AnimatedMangaDecor({ compact = false }: Props) {
       >
         <View style={styles.panelLine} />
         <View style={[styles.panelLine, styles.panelLineShort]} />
-        <MaterialCommunityIcons name="book-open-page-variant" size={compact ? 20 : 28} color={colors.redDark} />
+        <MaterialCommunityIcons name="book-open-page-variant" size={compact ? 20 : 28} color={theme.brand} />
       </Animated.View>
 
       <Animated.View style={[styles.spark, compact && styles.compactSpark, { opacity, transform: [{ scale }] }]}>
-        <MaterialCommunityIcons name="star-four-points" size={compact ? 18 : 24} color={colors.gold} />
+        <MaterialCommunityIcons name="star-four-points" size={compact ? 18 : 24} color={theme.warning} />
       </Animated.View>
 
       <Animated.View
@@ -108,7 +113,7 @@ export function AnimatedMangaDecor({ compact = false }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: ThemeTokens) => StyleSheet.create({
   panel: {
     position: 'absolute',
     right: 14,
@@ -119,8 +124,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radii.md,
     borderWidth: 2,
-    borderColor: 'rgba(124, 45, 18, 0.22)',
-    backgroundColor: 'rgba(255, 250, 240, 0.78)',
+    borderColor: theme.border,
+    backgroundColor: theme.surfaceSoft,
   },
   compactPanel: {
     right: 10,
@@ -135,12 +140,12 @@ const styles = StyleSheet.create({
     width: 34,
     height: 3,
     borderRadius: 2,
-    backgroundColor: 'rgba(249, 115, 22, 0.42)',
+    backgroundColor: theme.borderStrong,
   },
   panelLineShort: {
     top: 17,
     width: 22,
-    backgroundColor: 'rgba(225, 29, 72, 0.34)',
+    backgroundColor: theme.brandSoft,
   },
   spark: {
     position: 'absolute',
@@ -163,8 +168,8 @@ const styles = StyleSheet.create({
     gap: 5,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: 'rgba(159, 18, 57, 0.2)',
-    backgroundColor: 'rgba(255, 247, 237, 0.7)',
+    borderColor: theme.border,
+    backgroundColor: theme.surface,
   },
   compactBubble: {
     right: 12,
@@ -176,9 +181,9 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: colors.coral,
+    backgroundColor: theme.accent,
   },
   bubbleDotAccent: {
-    backgroundColor: colors.red,
+    backgroundColor: theme.brand,
   },
 });

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, ImageSourcePropType, StyleSheet, View, ViewStyle } from 'react-native';
-import { colors, radii } from '../styles/theme';
+import { radii } from '../styles/constants';
+import { useTheme } from '../styles/themeContext';
+import type { ThemeTokens } from '../styles/themes/types';
 
 type Props = {
   source: ImageSourcePropType;
@@ -9,6 +11,8 @@ type Props = {
 };
 
 export function MascotSticker({ source, size = 82, style }: Props) {
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
   const float = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -49,7 +53,7 @@ export function MascotSticker({ source, size = 82, style }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: ThemeTokens) => StyleSheet.create({
   wrap: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -57,10 +61,10 @@ const styles = StyleSheet.create({
   glow: {
     position: 'absolute',
     borderWidth: 1,
-    borderColor: 'rgba(216, 155, 114, 0.36)',
-    backgroundColor: 'rgba(255, 250, 235, 0.72)',
+    borderColor: theme.borderStrong,
+    backgroundColor: theme.surfaceSoft,
     borderRadius: radii.md,
-    shadowColor: colors.redDark,
+    shadowColor: theme.brand,
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.16,
     shadowRadius: 12,

@@ -1,5 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { colors, radii } from '../styles/theme';
+import { radii } from '../styles/constants';
+import { useTheme } from '../styles/themeContext';
+import type { ThemeTokens } from '../styles/themes/types';
 import type { ComicCatalog } from '../types';
 
 type Props = {
@@ -9,6 +11,9 @@ type Props = {
 };
 
 export function CatalogSwitcher({ catalogs, selectedCatalogId, onSelectCatalog }: Props) {
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
+
   if (catalogs.length <= 1) {
     return null;
   }
@@ -36,7 +41,7 @@ export function CatalogSwitcher({ catalogs, selectedCatalogId, onSelectCatalog }
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: ThemeTokens) => StyleSheet.create({
   wrap: {
     marginBottom: 10,
   },
@@ -49,20 +54,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: colors.lineStrong,
+    borderColor: theme.borderStrong,
     paddingHorizontal: 12,
-    backgroundColor: colors.cream,
+    backgroundColor: theme.surfaceRaised,
   },
   selectedTab: {
-    borderColor: colors.shelfDark,
-    backgroundColor: colors.shelf,
+    borderColor: theme.brand,
+    backgroundColor: theme.brand,
   },
   tabText: {
-    color: colors.ink,
+    color: theme.textPrimary,
     fontSize: 13,
     fontWeight: '900',
   },
   selectedTabText: {
-    color: colors.white,
+    color: theme.textOnBrand,
   },
 });

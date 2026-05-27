@@ -1,7 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { colors, radii } from '../styles/theme';
+import { radii } from '../styles/constants';
+import { useTheme } from '../styles/themeContext';
+import type { ThemeTokens } from '../styles/themes/types';
 import type { ComicIssue, IssueCondition, IssueRecord, OwnershipStatus } from '../types';
 import { SegmentedControl } from './SegmentedControl';
 
@@ -28,6 +30,9 @@ const conditionOptions: Array<{ label: string; value: IssueCondition }> = [
 ];
 
 export function IssueDetailModal({ issue, record, visible, onClose, onSave }: Props) {
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
+  
   const [status, setStatus] = useState<OwnershipStatus>(record.status);
   const [condition, setCondition] = useState<IssueCondition>(record.condition);
   const [note, setNote] = useState(record.note);
@@ -52,7 +57,7 @@ export function IssueDetailModal({ issue, record, visible, onClose, onSave }: Pr
               <Text style={styles.title}>{issue.displayTitle}</Text>
             </View>
             <Pressable accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
-              <MaterialCommunityIcons name="close" size={20} color={colors.white} />
+              <MaterialCommunityIcons name="close" size={20} color={theme.textOnBrand} />
             </Pressable>
           </View>
 
@@ -68,7 +73,7 @@ export function IssueDetailModal({ issue, record, visible, onClose, onSave }: Pr
             value={note}
             onChangeText={setNote}
             placeholder="例如：带赠品、封面有折痕、已在某店下单"
-            placeholderTextColor="#8b9893"
+            placeholderTextColor={theme.textMuted}
             style={styles.note}
           />
 
@@ -77,7 +82,7 @@ export function IssueDetailModal({ issue, record, visible, onClose, onSave }: Pr
             onPress={() => onSave({ status, condition, note })}
             style={styles.saveButton}
           >
-            <MaterialCommunityIcons name="content-save-check" size={18} color={colors.white} />
+            <MaterialCommunityIcons name="content-save-check" size={18} color={theme.textOnBrand} />
             <Text style={styles.saveText}>保存收藏状态</Text>
           </Pressable>
         </View>
@@ -86,21 +91,21 @@ export function IssueDetailModal({ issue, record, visible, onClose, onSave }: Pr
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: ThemeTokens) => StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(59, 29, 18, 0.44)',
+    backgroundColor: 'rgba(0, 0, 0, 0.44)',
   },
   sheet: {
     borderTopLeftRadius: radii.md,
     borderTopRightRadius: radii.md,
     borderWidth: 1,
     borderBottomWidth: 0,
-    borderColor: colors.lineStrong,
+    borderColor: theme.borderStrong,
     padding: 18,
     paddingBottom: 28,
-    backgroundColor: colors.paperWarm,
+    backgroundColor: theme.surface,
   },
   header: {
     flexDirection: 'row',
@@ -109,13 +114,13 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   kicker: {
-    color: colors.redDark,
+    color: theme.brand,
     fontSize: 12,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
   title: {
-    color: colors.ink,
+    color: theme.textPrimary,
     fontSize: 24,
     fontWeight: '900',
   },
@@ -125,12 +130,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.md,
-    backgroundColor: colors.shelf,
+    backgroundColor: theme.brand,
   },
   label: {
     marginTop: 14,
     marginBottom: 8,
-    color: colors.ink,
+    color: theme.textPrimary,
     fontSize: 14,
     fontWeight: '800',
   },
@@ -138,10 +143,10 @@ const styles = StyleSheet.create({
     minHeight: 86,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.lineStrong,
+    borderColor: theme.borderStrong,
     padding: 12,
-    color: colors.ink,
-    backgroundColor: colors.cream,
+    color: theme.textPrimary,
+    backgroundColor: theme.surfaceRaised,
     textAlignVertical: 'top',
   },
   saveButton: {
@@ -152,10 +157,10 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 18,
     borderRadius: radii.md,
-    backgroundColor: colors.redDark,
+    backgroundColor: theme.brand,
   },
   saveText: {
-    color: colors.white,
+    color: theme.textOnBrand,
     fontSize: 16,
     fontWeight: '900',
   },

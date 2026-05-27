@@ -2,7 +2,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { catalogDefinitionFromInput } from '../storage/localCatalogStorage';
-import { colors, radii } from '../styles/theme';
+import { radii } from '../styles/constants';
+import { useTheme } from '../styles/themeContext';
+import type { ThemeTokens } from '../styles/themes/types';
 import type { ComicCatalogKind, StoredComicCatalogDefinition } from '../types';
 import { SegmentedControl } from './SegmentedControl';
 
@@ -31,6 +33,8 @@ const defaultInput = {
 };
 
 export function LocalCatalogEditorModal({ visible, onClose, onSave }: Props) {
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
   const [input, setInput] = useState(defaultInput);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -64,7 +68,7 @@ export function LocalCatalogEditorModal({ visible, onClose, onSave }: Props) {
               <Text style={styles.title}>新建目录</Text>
             </View>
             <Pressable accessibilityRole="button" accessibilityLabel="关闭新建目录" onPress={onClose} style={styles.closeButton}>
-              <MaterialCommunityIcons name="close" size={20} color={colors.white} />
+              <MaterialCommunityIcons name="close" size={20} color={theme.textOnBrand} />
             </Pressable>
           </View>
 
@@ -76,7 +80,7 @@ export function LocalCatalogEditorModal({ visible, onClose, onSave }: Props) {
               value={input.id}
               onChangeText={(value) => updateInput('id', value)}
               placeholder="例如 doraemon"
-              placeholderTextColor="#8b8173"
+              placeholderTextColor={theme.textMuted}
               style={styles.input}
             />
 
@@ -85,7 +89,7 @@ export function LocalCatalogEditorModal({ visible, onClose, onSave }: Props) {
               value={input.name}
               onChangeText={(value) => updateInput('name', value)}
               placeholder="例如 哆啦A梦"
-              placeholderTextColor="#8b8173"
+              placeholderTextColor={theme.textMuted}
               style={styles.input}
             />
 
@@ -94,7 +98,7 @@ export function LocalCatalogEditorModal({ visible, onClose, onSave }: Props) {
               value={input.shortName}
               onChangeText={(value) => updateInput('shortName', value)}
               placeholder="例如 哆啦"
-              placeholderTextColor="#8b8173"
+              placeholderTextColor={theme.textMuted}
               style={styles.input}
             />
 
@@ -109,7 +113,7 @@ export function LocalCatalogEditorModal({ visible, onClose, onSave }: Props) {
                   value={input.issueCount}
                   onChangeText={(value) => updateInput('issueCount', value)}
                   placeholder="45"
-                  placeholderTextColor="#8b8173"
+                  placeholderTextColor={theme.textMuted}
                   style={styles.input}
                 />
               </View>
@@ -120,7 +124,7 @@ export function LocalCatalogEditorModal({ visible, onClose, onSave }: Props) {
                   value={input.numberPadding}
                   onChangeText={(value) => updateInput('numberPadding', value)}
                   placeholder="3"
-                  placeholderTextColor="#8b8173"
+                  placeholderTextColor={theme.textMuted}
                   style={styles.input}
                 />
               </View>
@@ -133,14 +137,14 @@ export function LocalCatalogEditorModal({ visible, onClose, onSave }: Props) {
               value={input.coverPattern}
               onChangeText={(value) => updateInput('coverPattern', value)}
               placeholder="https://example.com/covers/{padded}.jpg"
-              placeholderTextColor="#8b8173"
+              placeholderTextColor={theme.textMuted}
               style={styles.input}
             />
 
             {validationError ? <Text style={styles.errorText}>{validationError}</Text> : null}
 
             <Pressable accessibilityRole="button" onPress={handleSave} style={styles.saveButton}>
-              <MaterialCommunityIcons name="content-save-check" size={18} color={colors.white} />
+              <MaterialCommunityIcons name="content-save-check" size={18} color={theme.textOnBrand} />
               <Text style={styles.saveText}>保存目录</Text>
             </Pressable>
           </ScrollView>
@@ -150,11 +154,11 @@ export function LocalCatalogEditorModal({ visible, onClose, onSave }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: ThemeTokens) => StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(59, 29, 18, 0.44)',
+    backgroundColor: 'rgba(0, 0, 0, 0.44)',
   },
   sheet: {
     width: '100%',
@@ -165,10 +169,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radii.md,
     borderWidth: 1,
     borderBottomWidth: 0,
-    borderColor: colors.lineStrong,
+    borderColor: theme.borderStrong,
     padding: 18,
     paddingBottom: 24,
-    backgroundColor: colors.paperWarm,
+    backgroundColor: theme.surface,
   },
   header: {
     flexDirection: 'row',
@@ -177,13 +181,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   kicker: {
-    color: colors.redDark,
+    color: theme.brand,
     fontSize: 12,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
   title: {
-    color: colors.ink,
+    color: theme.textPrimary,
     fontSize: 24,
     fontWeight: '900',
   },
@@ -193,7 +197,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.md,
-    backgroundColor: colors.shelf,
+    backgroundColor: theme.brand,
   },
   form: {
     paddingBottom: 4,
@@ -201,7 +205,7 @@ const styles = StyleSheet.create({
   label: {
     marginTop: 12,
     marginBottom: 7,
-    color: colors.ink,
+    color: theme.textPrimary,
     fontSize: 14,
     fontWeight: '800',
   },
@@ -209,10 +213,10 @@ const styles = StyleSheet.create({
     minHeight: 42,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.lineStrong,
+    borderColor: theme.borderStrong,
     paddingHorizontal: 12,
-    color: colors.ink,
-    backgroundColor: colors.cream,
+    color: theme.textPrimary,
+    backgroundColor: theme.surfaceRaised,
     fontSize: 15,
   },
   numberRow: {
@@ -224,7 +228,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     marginTop: 12,
-    color: colors.redDark,
+    color: theme.danger,
     fontSize: 13,
     fontWeight: '800',
   },
@@ -236,10 +240,10 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 18,
     borderRadius: radii.md,
-    backgroundColor: colors.redDark,
+    backgroundColor: theme.brand,
   },
   saveText: {
-    color: colors.white,
+    color: theme.textOnBrand,
     fontSize: 16,
     fontWeight: '900',
   },
