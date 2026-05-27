@@ -1,5 +1,12 @@
 # Project AI rules
 
+## Global design standards
+
+Before making changes that affect UI, UX, visual design, themes, icons,
+illustrations, motion, or page-level layout, read and follow:
+
+- `docs/global-standards/ui/manga-keep-ui-theme-style.md`
+
 ## Mobile preview verification
 
 This project is a mobile app. For any future change that affects app behavior,
@@ -34,4 +41,3 @@ cd mobile
 npm run typecheck
 npm test
 ```
-
