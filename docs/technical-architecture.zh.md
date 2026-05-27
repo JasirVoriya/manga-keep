@@ -73,7 +73,7 @@ flowchart TB
 - `updateManifestSources`：应用版本清单源，按 `priority` 从 Gitee 到
   GitHub 兜底。
 
-代码会过滤包含 `YOUR_NAME`、`YOUR_REPO` 等占位符的地址，因此模板配置在
+代码会过滤包含 `YOUR_NAME` 等占位符的地址，因此模板配置在
 开发期不会触发无效远程请求。
 
 ## 目录结构与职责
@@ -271,7 +271,8 @@ AsyncStorage 或网络还没有返回，界面也有可展示的默认目录。
 `collectionStorage.ts` 的关键行为是：
 
 - `loadRecords()` 从 AsyncStorage 读取 JSON，解析失败时返回空对象。
-- `normalizeRecordMap()` 兼容旧格式纯数字 key，把它们迁移为默认目录 key。
+- `normalizeRecordMap()` 只保留 `catalogId:issueNumber` 形式的限定 key；旧
+  格式数字收藏记录不会迁移为默认目录记录。
 - `mergeRecord()` 合并单期状态并刷新 `updatedAt`。
 - `saveRecords()` 写回 AsyncStorage。
 - `normalizeStatus()` 保证「已有」状态有默认品相，非「已有」状态重置为

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>期刊收藏册项目可视化总览</title>
+  <title>漫集 MangaKeep 项目可视化总览</title>
   <style>
     :root {
       --ink: #231f20;
@@ -517,7 +517,7 @@
     <header class="masthead">
       <div>
         <div class="kicker">Project visual brief · 2026-05-26</div>
-        <h1>期刊收藏册项目可视化总览</h1>
+        <h1>漫集 MangaKeep 项目可视化总览</h1>
         <p class="lead">
           这是一份面向项目 owner 和后续开发者的可视化说明：把当前功能、
           未完成缺口、无服务器数据方案、运行时架构和下一步优先级放在同一页里。
@@ -531,7 +531,7 @@
       </div>
       <aside class="scoreboard" aria-label="项目状态摘要">
         <div class="metric">
-          <strong>40/40</strong>
+          <strong>44/44</strong>
           <span>当前逻辑测试覆盖目录、存储、更新检测等核心模块。</span>
         </div>
         <div class="metric">
@@ -642,7 +642,7 @@
           <div><span class="tag partial">检测支持</span> 下载入口待发布</div>
           <div>补真实 version.json、更新中心页面和 APK release 资产</div>
 
-          <div>重新设计 App 名、仓库名和图标</div>
+          <div>品牌已批准，rename plan 负责落地</div>
           <div><span class="tag partial">已定名</span> 漫集 / MangaKeep / manga-keep</div>
           <div>按 rename plan 完成图标、导出标识和发布说明收口</div>
         </div>
@@ -657,8 +657,8 @@
           </p>
         </div>
         <div class="architecture">
-          <div class="diagram" aria-label="整体技术架构图">
-            <svg viewBox="0 0 760 500" role="img" aria-label="期刊收藏册整体架构图">
+          <div class="diagram" aria-label="漫集 MangaKeep 整体技术架构图">
+            <svg viewBox="0 0 760 500" role="img" aria-label="漫集 MangaKeep 整体架构图">
               <defs>
                 <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
                   <path d="M0,0 L10,4 L0,8 Z" fill="#5c416a"></path>
@@ -742,7 +742,7 @@
           </article>
           <article class="stage">
             <h3><strong>2</strong>加载本地状态</h3>
-            <p>从 AsyncStorage 读取收藏记录和本地目录定义，旧版数字 key 会迁移到默认目录。</p>
+            <p>从 AsyncStorage 读取收藏记录和本地目录定义，只保留带目录 ID 的限定 key。</p>
           </article>
           <article class="stage">
             <h3><strong>3</strong>拉公共目录</h3>

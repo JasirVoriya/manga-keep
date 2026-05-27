@@ -96,7 +96,7 @@ Gitee 官方说明里，Release 附件适合上传制作好的安装包、补丁
 
 ```text
 https://gitee.com/YOUR_NAME/manga-keep/raw/master/release/version.json
-https://raw.githubusercontent.com/YOUR_NAME/YOUR_REPO/main/release/version.json
+https://raw.githubusercontent.com/YOUR_NAME/manga-keep/main/release/version.json
 ```
 
 7. 在 `mobile/app.json` 里配置多个版本清单源：
@@ -111,7 +111,7 @@ https://raw.githubusercontent.com/YOUR_NAME/YOUR_REPO/main/release/version.json
     },
     {
       "id": "github",
-      "manifestUrl": "https://raw.githubusercontent.com/YOUR_NAME/YOUR_REPO/main/release/version.json",
+      "manifestUrl": "https://raw.githubusercontent.com/YOUR_NAME/manga-keep/main/release/version.json",
       "priority": 2
     }
   ]
@@ -121,7 +121,7 @@ https://raw.githubusercontent.com/YOUR_NAME/YOUR_REPO/main/release/version.json
 如果你不想公开代码仓库，可以只建一个公开的发布仓库，里面只放
 `release/version.json`、更新中心页面和 Release 附件，不放源码。
 
-App 会过滤 `YOUR_NAME`、`YOUR_REPO` 和 `example.com` 这类占位地址。开发期
+App 会过滤 `YOUR_NAME` 和 `example.com` 这类占位地址。开发期
 没有填真实地址时，它不会一直请求无效 URL。
 
 ## 更新中心页面
