@@ -62,8 +62,37 @@ describe('local catalog storage', () => {
     );
   });
 
+  it('exports MangaKeep catalog backup envelopes', () => {
+    const exported = JSON.parse(exportCatalogDefinition(validDefinition)) as {
+      app: string;
+      type: string;
+      version: number;
+      catalog: unknown;
+    };
+
+    assert.equal(exported.app, 'manga-keep');
+    assert.equal(exported.type, 'catalog-definition');
+    assert.equal(exported.version, 1);
+    assert.deepEqual(exported.catalog, validDefinition);
+  });
+
   it('round trips exported catalog definitions', () => {
     assert.deepEqual(parseImportedCatalogDefinition(exportCatalogDefinition(validDefinition)), validDefinition);
+  });
+
+  it('rejects legacy manga-shelf catalog backup envelopes', () => {
+    assert.throws(
+      () =>
+        parseImportedCatalogDefinition(
+          JSON.stringify({
+            app: 'manga-shelf',
+            type: 'catalog-definition',
+            version: 1,
+            catalog: validDefinition,
+          }),
+        ),
+      /manga-keep/,
+    );
   });
 
   it('finds catalog conflicts by ID', () => {
