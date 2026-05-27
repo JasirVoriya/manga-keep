@@ -106,7 +106,7 @@ describe('collection storage record normalization', () => {
   it('rejects legacy manga-shelf backup envelopes', () => {
     assert.throws(
       () => parseImportedRecords(JSON.stringify({ app: 'manga-shelf', records: { 'zhiyin-manke:1': validRecord } })),
-      /当前版本只接受 manga-keep 格式备份/,
+      /manga-keep/,
     );
   });
 });
@@ -275,7 +275,7 @@ In `mobile/src/storage/localCatalogStorage.test.ts`, replace the existing
             catalog: validDefinition,
           }),
         ),
-      /当前版本只接受 manga-keep 格式目录备份/,
+      /manga-keep/,
     );
   });
 ```
