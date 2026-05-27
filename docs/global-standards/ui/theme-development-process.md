@@ -7,10 +7,10 @@
 设计和开发一个新主题时，相关产出物必须按以下目录结构进行存放：
 
 *   **主题设计文档**：
-    存放在 `docs/global-standards/ui/themes/<theme-name>.md`。
+    存放在 `docs/global-standards/ui/themes/<theme-name>/<theme-name>.md`。
     文档内容应包含：主题设计理念（如“暖纸”、“樱花”等）、目标受众、Semantic Tokens（语义化色值）映射表、插画/助手角色使用说明等。
 *   **主题原型图与设计素材**：
-    存放在 `docs/global-standards/ui/themes/assets/<theme-name>/` 目录下。
+    存放在 `docs/global-standards/ui/themes/<theme-name>/assets/` 目录下。
     AI 生成的原型图、情绪板（Moodboard）、以及未来可能用到的空状态背景贴纸或角色小图标，均存放在该对应的主题资产文件夹内。
 *   **代码实现文件**：
     存放在 `mobile/src/styles/themes/<theme-name>.ts`。
@@ -21,8 +21,8 @@
 
 ### 阶段一：设计与原型 (Design & Prototype)
 1.  **明确主题意图**：与用户沟通，确认新主题的风格关键词（如偏向暗黑、小清新、高对比度等）。
-2.  **生成原型/视觉参考**：AI 可以利用生图工具生成主题的 UI 原型或视觉风格板，存入 `assets/<theme-name>/` 文件夹。
-3.  **起草设计文档**：在 `themes/` 目录下创建新主题的 `.md` 设计文档，定义所有的 Semantic Tokens（基础层、文字层、品牌操作层、状态层、反馈层），确保没有遗漏。
+2.  **生成原型/视觉参考**：AI 可以利用生图工具生成主题的 UI 原型或视觉风格板，存入 `docs/global-standards/ui/themes/<theme-name>/assets/` 文件夹。
+3.  **起草设计文档**：在 `<theme-name>/` 目录下创建新主题的 `<theme-name>.md` 设计文档，定义所有的 Semantic Tokens（基础层、文字层、品牌操作层、状态层、反馈层），确保没有遗漏。
 
 ### 阶段二：用户审核 (User Review)
 1.  **提交审核**：向用户展示原型图与 Token 映射表。
