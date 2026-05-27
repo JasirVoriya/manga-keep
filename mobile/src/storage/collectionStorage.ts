@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { makeIssueKey } from '../data/catalogHelpers';
-import { DEFAULT_CATALOG_ID } from '../data/defaultCatalogConstants';
 import type { ComicIssueKey, IssueCondition, IssueRecord, IssueRecordMap, OwnershipStatus } from '../types';
 
-const STORAGE_KEY = 'comic-guests.collection.v1';
+const STORAGE_KEY = 'manga-keep.collection.v1';
+const BACKUP_APP_ID = 'manga-keep';
 
 export const defaultRecord: IssueRecord = {
   status: 'missing',
@@ -29,10 +29,6 @@ function isIssueRecord(value: unknown): value is IssueRecord {
 function normalizeRecordKey(key: string): ComicIssueKey | null {
   if (/^[^:]+:\d+$/.test(key)) {
     return key as ComicIssueKey;
-  }
-
-  if (/^\d+$/.test(key)) {
-    return makeIssueKey(DEFAULT_CATALOG_ID, Number(key));
   }
 
   return null;
@@ -76,7 +72,7 @@ export function mergeRecord(
   records: IssueRecordMap,
   issueNumber: number,
   patch: Partial<Pick<IssueRecord, 'status' | 'condition' | 'note'>>,
-  catalogId = DEFAULT_CATALOG_ID,
+  catalogId: string,
 ) {
   const key = makeIssueKey(catalogId, issueNumber);
   const current = records[key] ?? defaultRecord;
@@ -105,7 +101,7 @@ export function normalizeStatus(status: OwnershipStatus, condition: IssueConditi
 export function exportRecords(records: IssueRecordMap) {
   return JSON.stringify(
     {
-      app: 'manga-shelf',
+      app: BACKUP_APP_ID,
       version: 2,
       exportedAt: new Date().toISOString(),
       records,
@@ -115,12 +111,22 @@ export function exportRecords(records: IssueRecordMap) {
   );
 }
 
+function getWrappedRecords(parsed: unknown) {
+  if (!parsed || typeof parsed !== 'object' || !('records' in parsed)) {
+    return parsed;
+  }
+
+  const envelope = parsed as { app?: unknown; records?: unknown };
+  if (envelope.app !== BACKUP_APP_ID) {
+    throw new Error(`当前版本只接受 ${BACKUP_APP_ID} 格式备份。`);
+  }
+
+  return envelope.records;
+}
+
 export function parseImportedRecords(raw: string): IssueRecordMap {
   const parsed = JSON.parse(raw) as unknown;
-  const records =
-    parsed && typeof parsed === 'object' && 'records' in parsed
-      ? (parsed as { records?: unknown }).records
-      : parsed;
+  const records = getWrappedRecords(parsed);
   const normalized = normalizeRecordMap(records);
   if (
     Object.keys(normalized).length === 0 &&
