@@ -121,17 +121,25 @@ export function exportCatalogDefinition(definition: StoredComicCatalogDefinition
   );
 }
 
-function getWrappedCatalog(parsed: unknown) {
-  if (!parsed || typeof parsed !== 'object' || !('catalog' in parsed)) {
+function getCatalogImportPayload(parsed: unknown) {
+  if (isStoredCatalogDefinition(parsed)) {
     return parsed;
   }
 
-  const envelope = parsed as { app?: unknown; catalog?: unknown };
-  if (envelope.app !== BACKUP_APP_ID) {
-    throw new Error(`当前版本只接受 ${BACKUP_APP_ID} 格式目录备份。`);
+  if (!parsed || typeof parsed !== 'object') {
+    return parsed;
   }
 
-  return envelope.catalog;
+  const envelope = parsed as { app?: unknown; type?: unknown; version?: unknown; catalog?: unknown };
+  if (envelope.type === 'catalog-definition' && envelope.version === 1 && 'catalog' in envelope) {
+    if (envelope.app !== BACKUP_APP_ID) {
+      throw new Error(`当前版本只接受 ${BACKUP_APP_ID} 格式目录备份。`);
+    }
+
+    return envelope.catalog;
+  }
+
+  return parsed;
 }
 
 export function parseImportedCatalogDefinition(raw: string): StoredComicCatalogDefinition {
@@ -142,7 +150,7 @@ export function parseImportedCatalogDefinition(raw: string): StoredComicCatalogD
     throw new Error('导入内容不是有效的目录定义 JSON。');
   }
 
-  const catalog = getWrappedCatalog(parsed);
+  const catalog = getCatalogImportPayload(parsed);
   if (isStoredCatalogDefinition(catalog)) {
     return catalog;
   }
