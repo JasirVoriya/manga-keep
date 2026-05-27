@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isSafeCatalogId } from '../data/catalogHelpers';
 import type { ComicCatalogKind, StoredComicCatalogDefinition } from '../types';
 
-const LOCAL_CATALOGS_STORAGE_KEY = 'comic-guests.local-catalogs.v1';
+const LOCAL_CATALOGS_STORAGE_KEY = 'manga-keep.local-catalogs.v1';
+const BACKUP_APP_ID = 'manga-keep';
 
 export type LocalCatalogInput = {
   id: string;
@@ -109,7 +110,7 @@ export function catalogDefinitionFromInput(
 export function exportCatalogDefinition(definition: StoredComicCatalogDefinition) {
   return JSON.stringify(
     {
-      app: 'manga-shelf',
+      app: BACKUP_APP_ID,
       type: 'catalog-definition',
       version: 1,
       exportedAt: new Date().toISOString(),
@@ -120,19 +121,30 @@ export function exportCatalogDefinition(definition: StoredComicCatalogDefinition
   );
 }
 
-export function parseImportedCatalogDefinition(raw: string): StoredComicCatalogDefinition {
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    const catalog =
-      parsed && typeof parsed === 'object' && 'catalog' in parsed
-        ? (parsed as { catalog?: unknown }).catalog
-        : parsed;
+function getWrappedCatalog(parsed: unknown) {
+  if (!parsed || typeof parsed !== 'object' || !('catalog' in parsed)) {
+    return parsed;
+  }
 
-    if (isStoredCatalogDefinition(catalog)) {
-      return catalog;
-    }
+  const envelope = parsed as { app?: unknown; catalog?: unknown };
+  if (envelope.app !== BACKUP_APP_ID) {
+    throw new Error(`当前版本只接受 ${BACKUP_APP_ID} 格式目录备份。`);
+  }
+
+  return envelope.catalog;
+}
+
+export function parseImportedCatalogDefinition(raw: string): StoredComicCatalogDefinition {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
   } catch {
-    // Fall through to the shared import error below.
+    throw new Error('导入内容不是有效的目录定义 JSON。');
+  }
+
+  const catalog = getWrappedCatalog(parsed);
+  if (isStoredCatalogDefinition(catalog)) {
+    return catalog;
   }
 
   throw new Error('导入内容不是有效的目录定义 JSON。');
