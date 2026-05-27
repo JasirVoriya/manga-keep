@@ -3,21 +3,26 @@ import { View, Text, Image, StyleSheet, ViewStyle, StyleProp } from 'react-nativ
 import { useTheme } from '../styles/themeContext';
 import { radii } from '../styles/constants';
 
+import type { ImageSourcePropType } from 'react-native';
+
 interface Props {
+  source?: ImageSourcePropType;
   uri?: string;
   issueNumber: string;
   style?: StyleProp<ViewStyle>;
 }
 
-export function CoverImage({ uri, issueNumber, style }: Props) {
+export function CoverImage({ source, uri, issueNumber, style }: Props) {
   const { theme } = useTheme();
   const [hasError, setHasError] = useState(false);
+  
+  const finalSource = source || (uri ? { uri } : undefined);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.surfaceSoft, borderColor: theme.border }, style]}>
-      {uri && !hasError ? (
+      {finalSource && !hasError ? (
         <Image
-          source={{ uri }}
+          source={finalSource}
           style={styles.image}
           resizeMode="cover"
           onError={() => setHasError(true)}

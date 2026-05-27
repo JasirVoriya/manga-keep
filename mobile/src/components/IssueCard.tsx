@@ -40,7 +40,8 @@ export function IssueCard({ issue, record, selected = false, width, onPress, onL
         }
       ]}>
         <CoverImage 
-          uri={(typeof issue.cover === 'string' ? issue.cover : undefined) || issue.coverUrl} 
+          source={issue.cover as any}
+          uri={issue.coverUrl}
           issueNumber={issue.number.toString()}
           style={isMissing ? { opacity: 0.5 } : {}}
         />

@@ -45,7 +45,9 @@ export function OnboardingScreen() {
 
   function handleNext() {
     if (currentIndex < PAGES.length - 1) {
-      scrollRef.current?.scrollTo({ x: (currentIndex + 1) * width, animated: true });
+      const nextIndex = currentIndex + 1;
+      scrollRef.current?.scrollTo({ x: nextIndex * width, animated: true });
+      setCurrentIndex(nextIndex); // UI fallback update
     } else {
       navigation.replace('Library');
     }

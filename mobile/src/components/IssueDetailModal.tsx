@@ -72,7 +72,8 @@ export function IssueDetailModal({ issue, record, catalogName, visible, onClose,
             <View style={styles.infoRow}>
               <View style={styles.coverWrap}>
                 <CoverImage 
-                  uri={(typeof issue.cover === 'string' ? issue.cover : undefined) || issue.coverUrl} 
+                  source={issue.cover as any}
+                  uri={issue.coverUrl}
                   issueNumber={issue.number.toString()}
                   style={[styles.cover, isMissing ? { opacity: 0.5 } : {}]}
                 />
