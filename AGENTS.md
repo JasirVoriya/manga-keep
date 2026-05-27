@@ -9,6 +9,7 @@ Current global standard documents:
 
 - `docs/global-standards/README.md`
 - `docs/global-standards/ui/manga-keep-ui-theme-style.md`
+- `docs/global-standards/ui/theme-development-process.md`
 
 Hard rule: whenever a Markdown document is added to or deleted from
 `docs/global-standards/`, update this list in the same change. Do not leave
