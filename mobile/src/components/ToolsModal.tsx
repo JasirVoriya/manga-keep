@@ -1,34 +1,24 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { radii } from '../styles/constants';
 import { useTheme } from '../styles/themeContext';
 import type { ThemeTokens } from '../styles/themes/types';
 
 type Props = {
   visible: boolean;
-  backupText: string;
-  onChangeBackupText: (value: string) => void;
   onClose: () => void;
-  onCreateCatalog: () => void;
-  onExportRecords: () => void;
-  onImportRecords: () => void;
-  onExportCurrentCatalog: () => void;
-  onImportCatalog: () => void;
 };
 
-export function ToolsModal({
-  visible,
-  backupText,
-  onChangeBackupText,
-  onClose,
-  onCreateCatalog,
-  onExportRecords,
-  onImportRecords,
-  onExportCurrentCatalog,
-  onImportCatalog,
-}: Props) {
+export function ToolsModal({ visible, onClose }: Props) {
   const { theme } = useTheme();
   const styles = getStyles(theme);
+  const navigation = useNavigation<any>();
+
+  function handleNavigate(route: string) {
+    onClose();
+    navigation.navigate(route);
+  }
 
   return (
     <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
@@ -36,8 +26,8 @@ export function ToolsModal({
         <View style={styles.sheet}>
           <View style={styles.header}>
             <View>
-              <Text style={styles.kicker}>本地数据</Text>
-              <Text style={styles.title}>目录与备份</Text>
+              <Text style={styles.kicker}>工具箱</Text>
+              <Text style={styles.title}>更多功能</Text>
             </View>
             <Pressable accessibilityRole="button" accessibilityLabel="关闭工具" onPress={onClose} style={styles.closeButton}>
               <MaterialCommunityIcons name="close" size={20} color={theme.textOnBrand} />
@@ -45,21 +35,11 @@ export function ToolsModal({
           </View>
 
           <View style={styles.actions}>
-            <ToolButton theme={theme} styles={styles} icon="book-plus-outline" label="新建目录" onPress={onCreateCatalog} />
-            <ToolButton theme={theme} styles={styles} icon="database-export-outline" label="导出目录" onPress={onExportCurrentCatalog} />
-            <ToolButton theme={theme} styles={styles} icon="database-import-outline" label="导入目录" onPress={onImportCatalog} />
-            <ToolButton theme={theme} styles={styles} icon="download-box-outline" label="导出收藏" onPress={onExportRecords} />
-            <ToolButton theme={theme} styles={styles} icon="upload-box-outline" label="导入收藏" onPress={onImportRecords} />
+            <ToolButton theme={theme} styles={styles} icon="book-search-outline" label="目录广场" onPress={() => handleNavigate('CatalogCenter')} />
+            <ToolButton theme={theme} styles={styles} icon="text-box-search-outline" label="补缺清单" onPress={() => handleNavigate('ReplenishmentList')} />
+            <ToolButton theme={theme} styles={styles} icon="swap-horizontal" label="导入导出" onPress={() => handleNavigate('ImportExport')} />
+            <ToolButton theme={theme} styles={styles} icon="information-outline" label="关于应用" onPress={() => handleNavigate('About')} />
           </View>
-
-          <TextInput
-            multiline
-            value={backupText}
-            onChangeText={onChangeBackupText}
-            placeholder="JSON 会显示在这里，也可以粘贴目录或收藏备份再导入"
-            placeholderTextColor={theme.textMuted}
-            style={styles.backupInput}
-          />
         </View>
       </View>
     </Modal>
@@ -81,7 +61,7 @@ function ToolButton({
 }) {
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={styles.actionButton}>
-      <MaterialCommunityIcons name={icon} size={16} color={theme.brand} />
+      <MaterialCommunityIcons name={icon} size={24} color={theme.brand} />
       <Text style={styles.actionText}>{label}</Text>
     </Pressable>
   );
@@ -103,14 +83,14 @@ const getStyles = (theme: ThemeTokens) => StyleSheet.create({
     borderBottomWidth: 0,
     borderColor: theme.borderStrong,
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: 40,
     backgroundColor: theme.surface,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: 24,
   },
   kicker: {
     color: theme.brand,
@@ -134,38 +114,24 @@ const getStyles = (theme: ThemeTokens) => StyleSheet.create({
   actions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 8,
+    gap: 12,
   },
   actionButton: {
-    minWidth: 104,
-    height: 38,
+    minWidth: 80,
+    height: 80,
     flexGrow: 1,
-    flexBasis: '30%',
-    flexDirection: 'row',
+    flexBasis: '22%',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 8,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: theme.borderStrong,
-    paddingHorizontal: 10,
     backgroundColor: theme.surfaceRaised,
   },
   actionText: {
     color: theme.textPrimary,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
-  },
-  backupInput: {
-    minHeight: 120,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: theme.borderStrong,
-    padding: 10,
-    color: theme.textPrimary,
-    backgroundColor: theme.surfaceRaised,
-    fontSize: 12,
-    textAlignVertical: 'top',
   },
 });

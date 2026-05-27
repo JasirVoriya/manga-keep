@@ -7,6 +7,7 @@ import { BatchActionScreen } from '../screens/BatchActionScreen';
 import { ImportExportScreen } from '../screens/ImportExportScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { AboutScreen } from '../screens/AboutScreen';
+import { ReplenishmentListScreen } from '../screens/ReplenishmentListScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -20,6 +21,7 @@ export function RootNavigator() {
       <Stack.Screen name="BatchAction" component={BatchActionScreen} />
       <Stack.Screen name="ImportExport" component={ImportExportScreen} />
       <Stack.Screen name="About" component={AboutScreen} />
+      <Stack.Screen name="ReplenishmentList" component={ReplenishmentListScreen} />
     </Stack.Navigator>
   );
 }

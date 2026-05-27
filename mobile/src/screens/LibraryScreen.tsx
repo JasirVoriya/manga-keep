@@ -522,14 +522,7 @@ export function LibraryScreen() {
 
       <ToolsModal
         visible={toolsOpen}
-        backupText={backupText}
-        onChangeBackupText={setBackupText}
         onClose={() => setToolsOpen(false)}
-        onCreateCatalog={() => setCatalogEditorOpen(true)}
-        onExportRecords={handleExport}
-        onImportRecords={handleImport}
-        onExportCurrentCatalog={handleExportCurrentCatalog}
-        onImportCatalog={handleImportCatalog}
       />
       <LocalCatalogEditorModal
         visible={catalogEditorOpen}
