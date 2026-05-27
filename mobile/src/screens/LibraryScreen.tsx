@@ -540,6 +540,7 @@ export function LibraryScreen() {
       <IssueDetailModal
         issue={selectedIssue}
         record={selectedRecord}
+        catalogName={currentCatalog.name}
         visible={Boolean(selectedIssue)}
         onClose={() => setSelectedIssue(null)}
         onSave={(patch) => {
