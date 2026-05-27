@@ -95,7 +95,7 @@ describe('update manifest sources', () => {
           priority: 1,
         },
       ],
-      updateManifestUrl: 'https://gitee.com/YOUR_NAME/comic-guests/raw/master/release/version.json',
+      updateManifestUrl: 'https://gitee.com/YOUR_NAME/manga-keep/raw/master/release/version.json',
     });
 
     assert.deepEqual(getUpdateManifestSources(), []);
