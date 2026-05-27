@@ -1,4 +1,10 @@
-export const colors = {
+import { warmPaper } from './themes/warmPaper';
+import { radii } from './constants';
+
+// Temporary bridge export that includes both new tokens and old color names
+// to prevent typecheck errors in un-refactored components.
+export const colors: any = {
+  ...warmPaper,
   paper: '#fff7ed',
   paperWarm: '#fffaf0',
   cream: '#fffbeb',
@@ -20,8 +26,4 @@ export const colors = {
   white: '#ffffff',
 };
 
-export const radii = {
-  xs: 4,
-  sm: 6,
-  md: 8,
-};
+export { radii };

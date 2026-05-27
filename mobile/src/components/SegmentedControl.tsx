@@ -1,5 +1,7 @@
+import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, radii } from '../styles/theme';
+import { radii } from '../styles/constants';
+import { useTheme } from '../styles/themeContext';
 
 type Option<T extends string> = {
   label: string;
@@ -13,8 +15,10 @@ type Props<T extends string> = {
 };
 
 export function SegmentedControl<T extends string>({ options, value, onChange }: Props<T>) {
+  const { theme } = useTheme();
+
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { borderColor: theme.borderStrong, backgroundColor: theme.surfaceSoft }]}>
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -23,9 +27,17 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
             onPress={() => onChange(option.value)}
-            style={[styles.item, active && styles.activeItem]}
+            style={[
+              styles.item,
+              active && { backgroundColor: theme.brand }
+            ]}
           >
-            <Text style={[styles.label, active && styles.activeLabel]}>{option.label}</Text>
+            <Text style={[
+              styles.label,
+              { color: active ? theme.textOnBrand : theme.textSecondary }
+            ]}>
+              {option.label}
+            </Text>
           </Pressable>
         );
       })}
@@ -38,8 +50,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.lineStrong,
-    backgroundColor: colors.paperWarm,
     overflow: 'hidden',
   },
   item: {
@@ -49,15 +59,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
   },
-  activeItem: {
-    backgroundColor: colors.shelf,
-  },
   label: {
-    color: colors.muted,
     fontSize: 13,
     fontWeight: '800',
-  },
-  activeLabel: {
-    color: colors.paperWarm,
   },
 });
