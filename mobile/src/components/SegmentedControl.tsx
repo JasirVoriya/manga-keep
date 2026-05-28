@@ -18,7 +18,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
   const { theme } = useTheme();
 
   return (
-    <View style={[styles.wrap, { borderColor: theme.borderStrong, backgroundColor: theme.surfaceSoft }]}>
+    <View style={[styles.wrap, { borderColor: theme.borderStrong, backgroundColor: theme.surface }]}>
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -34,7 +34,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
           >
             <Text style={[
               styles.label,
-              { color: active ? theme.textOnBrand : theme.textSecondary }
+              { color: active ? theme.textOnBrand : theme.textPrimary }
             ]}>
               {option.label}
             </Text>

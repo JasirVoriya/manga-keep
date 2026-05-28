@@ -19,7 +19,7 @@ type Props = {
 export function IssueCard({ issue, record, selected = false, width, onPress, onLongPress }: Props) {
   const { theme } = useTheme();
   const isMissing = record.status === 'missing';
-  
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -33,21 +33,29 @@ export function IssueCard({ issue, record, selected = false, width, onPress, onL
     >
       <View style={[
         styles.coverFrame,
-        { 
-          backgroundColor: theme.surface, 
-          borderColor: selected ? theme.brand : theme.border,
-          borderWidth: selected ? 2 : 1
+        {
+          backgroundColor: theme.surface,
+          shadowColor: theme.shadow,
         }
       ]}>
-        <CoverImage 
+        <CoverImage
           source={issue.cover as any}
           uri={issue.coverUrl}
           issueNumber={issue.number.toString()}
-          style={isMissing ? { opacity: 0.5 } : {}}
+          style={isMissing ? { opacity: 0.5, borderRadius: radii.md } : { borderRadius: radii.md }}
         />
+
+        {/* Floating status badge top-right */}
+        <View style={styles.floatingBadge}>
+          <StatusBadge status={record.status} />
+        </View>
+
+        {/* Selected Overlay */}
         {selected && (
-          <View style={[styles.selectedMark, { backgroundColor: theme.brand }]}>
-            <MaterialCommunityIcons name="check-bold" size={15} color={theme.textOnBrand} />
+          <View style={[styles.selectedOverlay, { backgroundColor: 'rgba(255,255,255,0.4)', borderColor: theme.brand, borderWidth: 3 }]}>
+            <View style={[styles.selectedMark, { backgroundColor: theme.brand }]}>
+              <MaterialCommunityIcons name="check-bold" size={15} color={theme.textOnBrand} />
+            </View>
           </View>
         )}
       </View>
@@ -55,7 +63,6 @@ export function IssueCard({ issue, record, selected = false, width, onPress, onL
         <Text numberOfLines={1} style={[styles.title, { color: theme.textPrimary }]}>
           {issue.label}
         </Text>
-        <StatusBadge status={record.status as any} />
       </View>
     </Pressable>
   );
@@ -63,33 +70,46 @@ export function IssueCard({ issue, record, selected = false, width, onPress, onL
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   coverFrame: {
-    borderRadius: radii.sm,
-    padding: 2,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
+    borderRadius: radii.md,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
     marginBottom: 8,
+    position: 'relative',
+    overflow: 'hidden', // to ensure cover border radius matches
   },
-  footer: {
-    gap: 4,
+  floatingBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+  },
+  selectedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: radii.md,
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: '800',
-    textAlign: 'center',
   },
   selectedMark: {
-    position: 'absolute',
-    left: 6,
-    bottom: 6,
-    width: 24,
-    height: 24,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingHorizontal: 2,
+  },
+  title: {
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

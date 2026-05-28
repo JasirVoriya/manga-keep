@@ -1,24 +1,20 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../styles/themeContext';
-import { radii } from '../styles/constants';
-
-type StatusType = 'owned' | 'missing' | 'wanted' | 'unmarked';
+import type { OwnershipStatus } from '../types';
 
 interface Props {
-  status: StatusType;
+  status: OwnershipStatus;
 }
 
 export function StatusBadge({ status }: Props) {
   const { theme } = useTheme();
 
-  if (status === 'unmarked') return null;
-
   const getBackgroundColor = () => {
     switch (status) {
       case 'owned': return theme.owned;
       case 'missing': return theme.missing;
-      case 'wanted': return theme.wanted;
+      case 'wishlist': return theme.wanted; // Use theme.wanted for wishlist
       default: return 'transparent';
     }
   };
@@ -27,7 +23,7 @@ export function StatusBadge({ status }: Props) {
     switch (status) {
       case 'owned': return '已有';
       case 'missing': return '缺本';
-      case 'wanted': return '想要';
+      case 'wishlist': return '想要';
       default: return '';
     }
   };
@@ -41,13 +37,18 @@ export function StatusBadge({ status }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radii.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12, // Pill shape
     alignSelf: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   text: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
 });

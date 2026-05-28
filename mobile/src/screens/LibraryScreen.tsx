@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
@@ -7,19 +8,20 @@ import {
   NativeSyntheticEvent,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
   useWindowDimensions,
+  type DimensionValue,
   type NativeTouchEvent,
 } from 'react-native';
-import { AnimatedMangaDecor } from '../components/AnimatedMangaDecor';
-import { CatalogSwitcher } from '../components/CatalogSwitcher';
+import { BottomNavBar } from '../components/BottomNavBar';
+import { CoverImage } from '../components/CoverImage';
 import { IssueCard } from '../components/IssueCard';
 import { IssueDetailModal } from '../components/IssueDetailModal';
 import { LocalCatalogEditorModal } from '../components/LocalCatalogEditorModal';
-import { MascotSticker } from '../components/MascotSticker';
 import { SegmentedControl } from '../components/SegmentedControl';
 import { ToolsModal } from '../components/ToolsModal';
 import { UpdatePromptModal } from '../components/UpdatePromptModal';
@@ -57,11 +59,10 @@ import { checkForAppUpdate, type AppUpdateInfo } from '../update/versionCheck';
 const filterOptions: Array<{ label: string; value: IssueFilter }> = [
   { label: '全部', value: 'all' },
   { label: '已有', value: 'owned' },
-  { label: '缺少', value: 'missing' },
+  { label: '缺本', value: 'missing' },
   { label: '想要', value: 'wishlist' },
 ];
 
-const chibiAssistant = require('../../assets/ui/ai-chibi-collector.png');
 const readerGirl = require('../../assets/ui/ai-chibi-reader.png');
 
 function distance(touches: NativeTouchEvent['touches']) {
@@ -75,18 +76,19 @@ function distance(touches: NativeTouchEvent['touches']) {
 export function LibraryScreen() {
   const { theme } = useTheme();
   const styles = getStyles(theme);
+  const navigation = useNavigation<any>();
   const colors = {
     muted: theme.textSecondary,
     shelfDark: theme.textPrimary,
-    white: theme.textOnBrand
+    white: theme.textOnBrand,
   };
 
   const { width } = useWindowDimensions();
   const [records, setRecords] = useState<IssueRecordMap>({});
   const [catalogs, setCatalogs] = useState<ComicCatalog[]>([defaultCatalog]);
-  const [selectedCatalogId, setSelectedCatalogId] = useState(defaultCatalog.id);
+  const [selectedCatalogId, setSelectedCatalogId] = useState<string | null>(null);
   const [catalogLoadFailed, setCatalogLoadFailed] = useState(false);
-  const [columns, setColumns] = useState(4);
+  const [columns, setColumns] = useState(3);
   const [filter, setFilter] = useState<IssueFilter>('all');
   const [query, setQuery] = useState('');
   const [selectedIssue, setSelectedIssue] = useState<ComicIssue | null>(null);
@@ -96,7 +98,7 @@ export function LibraryScreen() {
   const [toolsOpen, setToolsOpen] = useState(false);
   const [catalogEditorOpen, setCatalogEditorOpen] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
-  const selectedCatalogIdRef = useRef(selectedCatalogId);
+  const selectedCatalogIdRef = useRef<string | null>(selectedCatalogId);
   const sessionLocalCatalogsRef = useRef(new Map<string, ComicCatalog>());
   const pinchStartDistance = useRef(0);
   const pinchStartColumns = useRef(4);
@@ -134,9 +136,9 @@ export function LibraryScreen() {
         const nextCatalogs = mergeWithSessionLocalCatalogs(result.catalogs);
         setCatalogs(nextCatalogs);
         const currentId = selectedCatalogIdRef.current;
-        const nextSelectedId = nextCatalogs.some((catalog) => catalog.id === currentId)
+        const nextSelectedId = currentId && nextCatalogs.some((catalog) => catalog.id === currentId)
           ? currentId
-          : nextCatalogs[0]?.id ?? defaultCatalog.id;
+          : null;
         if (nextSelectedId !== currentId) {
           resetCatalogSelectionState();
           selectedCatalogIdRef.current = nextSelectedId;
@@ -149,9 +151,9 @@ export function LibraryScreen() {
           const nextCatalogs = mergeWithSessionLocalCatalogs([defaultCatalog]);
           setCatalogs(nextCatalogs);
           const currentId = selectedCatalogIdRef.current;
-          const nextSelectedId = nextCatalogs.some((catalog) => catalog.id === currentId)
+          const nextSelectedId = currentId && nextCatalogs.some((catalog) => catalog.id === currentId)
             ? currentId
-            : nextCatalogs[0]?.id ?? defaultCatalog.id;
+            : null;
           if (nextSelectedId !== currentId) {
             resetCatalogSelectionState();
             selectedCatalogIdRef.current = nextSelectedId;
@@ -187,6 +189,7 @@ export function LibraryScreen() {
     () => catalogs.find((catalog) => catalog.id === selectedCatalogId) ?? catalogs[0] ?? defaultCatalog,
     [catalogs, selectedCatalogId],
   );
+  const catalogOpen = selectedCatalogId !== null;
 
   const currentIssues = currentCatalog.issues;
   const totalIssues = currentCatalog.issueCount;
@@ -215,12 +218,30 @@ export function LibraryScreen() {
     });
   }, [currentIssues, filter, query, records]);
 
+  const filteredCatalogs = useMemo(() => {
+    const normalizedQuery = query.trim();
+    if (normalizedQuery.length === 0 || catalogOpen) {
+      return catalogs;
+    }
+
+    return catalogs.filter((catalog) => {
+      return (
+        catalog.name.includes(normalizedQuery) ||
+        catalog.shortName.includes(normalizedQuery) ||
+        catalog.description?.includes(normalizedQuery)
+      );
+    });
+  }, [catalogOpen, catalogs, query]);
+
   const maxContentWidth = 1040;
   const contentWidth = Math.min(width, maxContentWidth);
   const gap = width < 420 ? 8 : 12;
   const sidePadding = width < 420 ? 12 : 20;
   const cardWidth = Math.floor((contentWidth - sidePadding * 2 - gap * (columns - 1)) / columns);
   const selectedRecord = selectedIssue ? records[selectedIssue.key] ?? defaultRecord : defaultRecord;
+  const progressOwnedWidth = `${Math.min(100, stats.percent)}%` as DimensionValue;
+  const progressWantedWidth = `${Math.min(100, (stats.wishlist / Math.max(1, totalIssues)) * 100)}%` as DimensionValue;
+  const visibleMissing = filteredIssues.filter((issue) => (records[issue.key] ?? defaultRecord).status === 'missing').length;
 
   function persist(nextRecords: IssueRecordMap) {
     setRecords(nextRecords);
@@ -237,6 +258,30 @@ export function LibraryScreen() {
     selectedCatalogIdRef.current = catalog.id;
     setSelectedCatalogId(catalog.id);
     resetCatalogSelectionState();
+  }
+
+  function openCatalog(catalogId: string) {
+    selectedCatalogIdRef.current = catalogId;
+    setSelectedCatalogId(catalogId);
+    resetCatalogSelectionState();
+    setQuery('');
+    setFilter('all');
+  }
+
+  function closeCatalog() {
+    selectedCatalogIdRef.current = null;
+    setSelectedCatalogId(null);
+    resetCatalogSelectionState();
+    setQuery('');
+    setFilter('all');
+  }
+
+  function getCatalogStats(catalog: ComicCatalog) {
+    const owned = catalog.issues.filter((issue) => records[issue.key]?.status === 'owned').length;
+    const wishlist = catalog.issues.filter((issue) => records[issue.key]?.status === 'wishlist').length;
+    const missing = catalog.issueCount - owned;
+    const percent = catalog.issueCount > 0 ? Math.round((owned / catalog.issueCount) * 100) : 0;
+    return { owned, wishlist, missing, percent };
   }
 
   function updateIssue(issue: ComicIssue, patch: Parameters<typeof mergeRecord>[2]) {
@@ -363,108 +408,153 @@ export function LibraryScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.shell}>
         <View style={styles.header}>
+          {catalogOpen && (
+            <Pressable accessibilityRole="button" onPress={closeCatalog} style={styles.headerBackButton}>
+              <MaterialCommunityIcons name="chevron-left" size={20} color={theme.textPrimary} />
+              <Text style={styles.headerBackText}>返回</Text>
+            </Pressable>
+          )}
           <View style={styles.titleBlock}>
-            <Text style={styles.eyebrow}>把那些年追过的漫刊，好好收藏起来</Text>
-            <Text style={styles.appName}>{currentCatalog.name}</Text>
+            <Text style={styles.appName}>MangaKeep</Text>
+            <Text style={styles.catalogName} numberOfLines={1}>
+              {catalogOpen ? `目录「${currentCatalog.name}」` : '我的漫画书架'}
+            </Text>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="打开备份工具"
-            onPress={() => setToolsOpen(true)}
-            style={styles.toolButton}
-          >
-            <MaterialCommunityIcons name="database-cog" size={17} color={colors.shelfDark} />
-            <Text style={styles.toolButtonText}>工具</Text>
-          </Pressable>
+          {catalogOpen ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="打开当前目录工具"
+              style={styles.headerIconButton}
+              onPress={() => setToolsOpen(true)}
+            >
+              <MaterialCommunityIcons name="dots-horizontal" size={24} color={theme.textPrimary} />
+            </Pressable>
+          ) : (
+            <>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="新建收藏目录"
+                onPress={() => setCatalogEditorOpen(true)}
+                style={styles.newCollectionButton}
+              >
+                <MaterialCommunityIcons name="folder-plus-outline" size={30} color={colors.shelfDark} />
+                <Text style={styles.newCollectionText}>新建收藏</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="打开工具设置"
+                style={styles.headerIconButton}
+                onPress={() => setToolsOpen(true)}
+              >
+                <MaterialCommunityIcons name="cog-outline" size={22} color={theme.textPrimary} />
+              </Pressable>
+            </>
+          )}
         </View>
 
+        {catalogOpen ? (
+          <>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.shelfTabsScroller}
+          contentContainerStyle={styles.shelfTabs}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: filter === 'all' }}
+            onPress={() => setFilter('all')}
+            style={[styles.shelfTab, filter === 'all' && styles.shelfTabActive]}
+          >
+            <Text style={[styles.shelfTabText, filter === 'all' && styles.shelfTabTextActive]}>我的主架</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: filter === 'wishlist' }}
+            onPress={() => setFilter('wishlist')}
+            style={[styles.shelfTab, filter === 'wishlist' && styles.shelfTabActive]}
+          >
+            <Text style={[styles.shelfTabText, filter === 'wishlist' && styles.shelfTabTextActive]}>心愿单</Text>
+          </Pressable>
+          <Pressable style={styles.shelfTab} onPress={() => Alert.alert('电子版', '电子订阅分组会在后续版本开放。')}>
+            <Text style={styles.shelfTabText}>电子订阅</Text>
+          </Pressable>
+          <Pressable style={styles.shelfTab} onPress={() => Alert.alert('借出', '借出记录分组会在后续版本开放。')}>
+            <Text style={styles.shelfTabText}>借出</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="添加目录"
+            onPress={() => setCatalogEditorOpen(true)}
+            style={styles.addShelfButton}
+          >
+            <MaterialCommunityIcons name="plus" size={22} color={theme.textPrimary} />
+          </Pressable>
+        </ScrollView>
+
         <View style={styles.progressPanel}>
-          <AnimatedMangaDecor compact />
-          <MascotSticker source={chibiAssistant} size={92} style={styles.progressMascot} />
-          <View>
-            <Text style={styles.progressNumber}>{stats.percent}%</Text>
-            <Text style={styles.progressCaption}>收集完成</Text>
-          </View>
-          <View style={styles.statColumn}>
-            <Text style={styles.statLine}>已有 {stats.owned} / {totalIssues}</Text>
-            <Text style={styles.statLine}>缺本 {stats.missing} · 蹲守 {stats.wishlist}</Text>
+          <Text style={styles.progressPanelTitle}>收藏进度总览</Text>
+          <View style={styles.progressStatsRow}>
+            <View style={styles.progressStatGroupLeft}>
+              <Text style={styles.statLabel}>已有：{stats.owned}</Text>
+              <Text style={styles.statLabel}>缺本：{stats.missing}</Text>
+            </View>
+            <Text style={styles.progressPercent}>{stats.percent}%</Text>
+            <View style={styles.progressStatGroupRight}>
+              <Text style={styles.statLabel}>想要：</Text>
+              <Text style={styles.statNumber}>{stats.wishlist}</Text>
+            </View>
           </View>
           <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${stats.percent}%` }]} />
+            <View style={[styles.progressFillOwned, { width: progressOwnedWidth }]} />
+            <View style={[styles.progressFillWanted, { width: progressWantedWidth }]} />
+            <View style={[styles.progressFillMissing, { flex: 1 }]} />
+          </View>
+          <View style={styles.progressFooter}>
+            <View style={styles.progressFooterIcon} />
+            <Text style={styles.progressFooterText}>状态：已收集 {stats.percent}%</Text>
           </View>
         </View>
 
         <View style={styles.controls}>
-          <CatalogSwitcher
-            catalogs={catalogs}
-            selectedCatalogId={currentCatalog.id}
-            onSelectCatalog={(catalogId) => {
-              if (catalogId === currentCatalog.id) {
-                return;
-              }
-              selectedCatalogIdRef.current = catalogId;
-              setSelectedCatalogId(catalogId);
-              resetCatalogSelectionState();
-            }}
-          />
           {catalogLoadFailed && (
             <Text style={styles.catalogWarning}>公共目录暂时不可用，已显示本地目录和内置目录。</Text>
           )}
-          <View style={styles.searchRow}>
-            <View style={styles.searchBox}>
-              <MaterialCommunityIcons name="magnify" size={19} color={colors.muted} />
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                keyboardType="number-pad"
-                placeholder="搜索期号，例如 128"
-                placeholderTextColor="#9a7c65"
-                style={styles.search}
-              />
-            </View>
-            <View style={styles.densityButtons}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="增加网格列数"
-                style={styles.iconButton}
-                onPress={() => setColumns((value) => Math.min(8, value + 1))}
-              >
-                <MaterialCommunityIcons name="view-grid-plus" size={19} color={colors.white} />
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="减少网格列数"
-                style={styles.iconButton}
-                onPress={() => setColumns((value) => Math.max(3, value - 1))}
-              >
-                <MaterialCommunityIcons name="minus-box-outline" size={19} color={colors.white} />
-              </Pressable>
-            </View>
+          <View style={styles.searchBox}>
+            <MaterialCommunityIcons name="magnify" size={19} color={colors.muted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              keyboardType="number-pad"
+              placeholder="搜索书库..."
+              placeholderTextColor="#9a7c65"
+              style={styles.search}
+            />
           </View>
           <SegmentedControl options={filterOptions} value={filter} onChange={setFilter} />
           <View style={styles.catalogRow}>
             <Text style={styles.catalogLine}>
-              当前显示 {filteredIssues.length} 期 · {columns} 列
+              当前显示 {filteredIssues.length} 本 · 缺本 {visibleMissing} 本
             </Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={batchMode ? '退出批量模式' : '进入批量模式'}
+              accessibilityLabel={batchMode ? '完成批量操作' : '进入批量操作'}
               onPress={() => (batchMode ? exitBatchMode() : enterBatchWith())}
               style={[styles.batchToggle, batchMode && styles.batchToggleActive]}
             >
               <MaterialCommunityIcons
-                name={batchMode ? 'close-box-multiple' : 'checkbox-multiple-marked-outline'}
+                name={batchMode ? 'check' : 'playlist-check'}
                 size={15}
                 color={batchMode ? colors.white : colors.shelfDark}
               />
               <Text style={[styles.batchToggleText, batchMode && styles.batchToggleTextActive]}>
-                {batchMode ? '退出批量' : '批量'}
+                {batchMode ? '完成' : '批量操作'}
               </Text>
             </Pressable>
           </View>
           {batchMode && (
             <View style={styles.batchBar}>
-              <Text style={styles.batchCount}>已选 {selectedIssueKeys.size} 期</Text>
+              <Text style={styles.batchCount}>已选 {selectedIssueKeys.size} 本 · 点封面可多选，或按编号范围处理</Text>
               <View style={styles.batchActions}>
                 <Pressable style={styles.batchButton} onPress={selectVisibleIssues}>
                   <MaterialCommunityIcons name="select-all" size={14} color={colors.shelfDark} />
@@ -485,6 +575,10 @@ export function LibraryScreen() {
                 <Pressable style={styles.batchButton} onPress={() => applyBatchStatus('wishlist')}>
                   <MaterialCommunityIcons name="heart-plus" size={14} color={colors.shelfDark} />
                   <Text style={styles.batchButtonText}>想要</Text>
+                </Pressable>
+                <Pressable style={styles.batchButton} onPress={() => navigation.navigate('BatchAction')}>
+                  <MaterialCommunityIcons name="ray-start-arrow" size={14} color={colors.shelfDark} />
+                  <Text style={styles.batchButtonText}>范围标记</Text>
                 </Pressable>
               </View>
             </View>
@@ -518,6 +612,81 @@ export function LibraryScreen() {
             )}
           />
         </View>
+
+          </>
+        ) : (
+          <View style={styles.catalogHome}>
+            {catalogLoadFailed && (
+              <Text style={styles.catalogWarning}>公共目录暂时不可用，已显示本地目录和内置目录。</Text>
+            )}
+            <View style={styles.searchBox}>
+              <MaterialCommunityIcons name="magnify" size={19} color={colors.muted} />
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="搜索漫画书或目录..."
+                placeholderTextColor="#9a7c65"
+                style={styles.search}
+              />
+            </View>
+            <View style={styles.catalogHomeHeader}>
+              <Text style={styles.catalogHomeTitle}>漫画书列表</Text>
+              <Text style={styles.catalogHomeMeta}>{filteredCatalogs.length} 个目录</Text>
+            </View>
+            <ScrollView style={styles.catalogList} contentContainerStyle={styles.catalogListContent}>
+              {filteredCatalogs.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Image source={readerGirl} resizeMode="contain" style={styles.emptyImage} />
+                  <Text style={styles.emptyTitle}>没有匹配的漫画书</Text>
+                  <Text style={styles.emptyText}>换一个关键词，或新建一个本地目录。</Text>
+                </View>
+              ) : (
+                filteredCatalogs.map((catalog) => {
+                  const catalogStats = getCatalogStats(catalog);
+                  const previewIssues = catalog.issues.slice(0, 3);
+                  return (
+                    <Pressable
+                      key={catalog.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`打开${catalog.name}`}
+                      onPress={() => openCatalog(catalog.id)}
+                      style={styles.catalogBookCard}
+                    >
+                      <View style={styles.catalogCoverStack}>
+                        {previewIssues.map((issue, index) => (
+                          <View key={issue.key} style={[styles.catalogPreviewCover, { left: index * 26 }]}>
+                            <CoverImage
+                              source={issue.cover as any}
+                              uri={issue.coverUrl}
+                              issueNumber={issue.number.toString()}
+                              style={styles.catalogPreviewImage}
+                            />
+                          </View>
+                        ))}
+                      </View>
+                      <View style={styles.catalogBookInfo}>
+                        <Text style={styles.catalogBookName} numberOfLines={1}>{catalog.name}</Text>
+                        <Text style={styles.catalogBookDesc} numberOfLines={2}>
+                          {catalog.description ?? `${catalog.kind} · 共 ${catalog.issueCount} 本`}
+                        </Text>
+                        <View style={styles.catalogStatsRow}>
+                          <Text style={styles.catalogStatText}>已有 {catalogStats.owned}</Text>
+                          <Text style={styles.catalogStatText}>缺本 {catalogStats.missing}</Text>
+                          <Text style={styles.catalogStatText}>想要 {catalogStats.wishlist}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.catalogPercentPill}>
+                        <Text style={styles.catalogPercentText}>{catalogStats.percent}%</Text>
+                      </View>
+                    </Pressable>
+                  );
+                })
+              )}
+            </ScrollView>
+          </View>
+        )}
+
+        <BottomNavBar />
       </View>
 
       <ToolsModal
@@ -572,114 +741,221 @@ const getStyles = (theme: ThemeTokens) => StyleSheet.create({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 14,
+    paddingTop: 22,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+    backgroundColor: theme.surfaceSoft,
   },
   titleBlock: {
     flex: 1,
     paddingRight: 12,
   },
-  eyebrow: {
-    color: theme.brand,
-    fontSize: 12,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-  },
-  appName: {
-    marginTop: 4,
-    color: theme.textPrimary,
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: '900',
-  },
-  toolButton: {
-    height: 38,
-    minWidth: 70,
+  headerBackButton: {
+    minHeight: 38,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 2,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: theme.borderStrong,
-    backgroundColor: theme.surfaceRaised,
+    borderColor: theme.brand,
+    paddingLeft: 6,
+    paddingRight: 10,
+    marginRight: 10,
+    backgroundColor: theme.surface,
   },
-  toolButtonText: {
+  headerBackText: {
+    color: theme.textPrimary,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  appName: {
+    color: theme.textPrimary,
+    fontSize: 36,
+    lineHeight: 42,
+    fontWeight: '900',
+  },
+  catalogName: {
+    color: theme.textPrimary,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '800',
+  },
+  newCollectionButton: {
+    minWidth: 96,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  headerIconButton: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 19,
+    borderWidth: 1,
+    borderColor: theme.brand,
+    backgroundColor: theme.surface,
+    marginLeft: 8,
+  },
+  newCollectionText: {
+    color: theme.textPrimary,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  shelfTabsScroller: {
+    backgroundColor: theme.background,
+    flexGrow: 0,
+    flexShrink: 0,
+    height: 56,
+  },
+  shelfTabs: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  shelfTab: {
+    minHeight: 32,
+    justifyContent: 'center',
+    borderRadius: radii.md,
+    paddingHorizontal: 8,
+  },
+  shelfTabActive: {
+    backgroundColor: theme.brand,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 6,
+  },
+  shelfTabText: {
     color: theme.textPrimary,
     fontSize: 14,
     fontWeight: '900',
   },
-  progressPanel: {
-    overflow: 'hidden',
-    marginHorizontal: 20,
-    marginBottom: 14,
-    borderRadius: radii.md,
+  shelfTabTextActive: {
+    color: theme.textOnAccent,
+  },
+  addShelfButton: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 17,
+    backgroundColor: theme.surface,
     borderWidth: 1,
-    borderColor: theme.borderStrong,
-    padding: 14,
-    paddingRight: 104,
-    backgroundColor: theme.surfaceSoft,
-    shadowColor: theme.brand,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
+    borderColor: theme.brand,
   },
-  progressMascot: {
-    position: 'absolute',
-    right: 10,
-    bottom: 14,
+  progressPanel: {
+    marginHorizontal: 20,
+    marginTop: 4,
+    marginBottom: 12,
+    borderRadius: radii.xl,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
+    padding: 16,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
   },
-  progressNumber: {
-    color: theme.brand,
-    fontSize: 44,
+  progressPanelTitle: {
+    color: theme.textPrimary,
+    fontSize: 17,
+    fontWeight: '900',
+    marginBottom: 12,
+  },
+  progressStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  progressStatGroupLeft: {
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  progressStatGroupRight: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  statLabel: {
+    color: theme.textPrimary,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  statNumber: {
+    color: theme.textPrimary,
+    fontSize: 20,
     fontWeight: '900',
   },
-  progressCaption: {
-    marginTop: -4,
-    color: theme.textSecondary,
+  progressPercent: {
+    color: theme.textPrimary,
+    fontSize: 54,
+    fontWeight: '900',
+    lineHeight: 58,
+  },
+  progressTrack: {
+    height: 16,
+    borderRadius: radii.md,
+    backgroundColor: theme.surfaceSoft,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: theme.textPrimary,
+    flexDirection: 'row',
+  },
+  progressFillOwned: {
+    height: '100%',
+    backgroundColor: theme.owned,
+    borderRightWidth: 1,
+    borderRightColor: theme.textPrimary,
+  },
+  progressFillWanted: {
+    height: '100%',
+    backgroundColor: theme.wanted,
+    borderRightWidth: 1,
+    borderRightColor: theme.textPrimary,
+  },
+  progressFillMissing: {
+    height: '100%',
+    backgroundColor: theme.missing,
+  },
+  progressFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+    gap: 6,
+  },
+  progressFooterIcon: {
+    width: 10,
+    height: 10,
+    borderRadius: 2,
+    backgroundColor: theme.owned,
+  },
+  progressFooterText: {
+    color: theme.textPrimary,
     fontSize: 12,
     fontWeight: '800',
   },
-  statColumn: {
-    marginTop: 5,
-    alignItems: 'flex-start',
-  },
-  statLine: {
-    color: theme.textSecondary,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  progressTrack: {
-    height: 8,
-    marginTop: 14,
-    borderRadius: radii.md,
-    backgroundColor: theme.surface,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: radii.md,
-    backgroundColor: theme.brand,
-  },
   controls: {
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-  },
-  searchRow: {
-    flexDirection: 'row',
     gap: 10,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
   },
   searchBox: {
-    flex: 1,
-    height: 42,
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    borderRadius: radii.md,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: theme.borderStrong,
-    paddingHorizontal: 12,
+    borderColor: theme.textPrimary,
+    paddingHorizontal: 14,
     backgroundColor: theme.surfaceRaised,
   },
   search: {
@@ -687,23 +963,6 @@ const getStyles = (theme: ThemeTokens) => StyleSheet.create({
     height: '100%',
     color: theme.textPrimary,
     fontSize: 15,
-  },
-  densityButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  iconButton: {
-    width: 38,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.md,
-    backgroundColor: theme.brand,
-  },
-  iconText: {
-    color: theme.textOnBrand,
-    fontSize: 18,
-    fontWeight: '900',
   },
   catalogLine: {
     color: theme.textSecondary,
@@ -723,20 +982,20 @@ const getStyles = (theme: ThemeTokens) => StyleSheet.create({
     gap: 12,
   },
   batchToggle: {
-    minWidth: 76,
-    height: 34,
+    minHeight: 34,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: 6,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: theme.borderStrong,
-    backgroundColor: theme.surfaceRaised,
+    borderColor: theme.brand,
+    paddingHorizontal: 12,
+    backgroundColor: theme.surface,
   },
   batchToggleActive: {
-    borderColor: theme.danger,
-    backgroundColor: theme.danger,
+    borderColor: theme.brand,
+    backgroundColor: theme.brand,
   },
   batchToggleText: {
     color: theme.textPrimary,
@@ -772,9 +1031,9 @@ const getStyles = (theme: ThemeTokens) => StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: theme.borderStrong,
+    borderColor: theme.brand,
     paddingHorizontal: 10,
-    backgroundColor: theme.surfaceSoft,
+    backgroundColor: theme.surface,
   },
   batchPrimary: {
     borderColor: theme.brand,
@@ -792,12 +1051,116 @@ const getStyles = (theme: ThemeTokens) => StyleSheet.create({
     flex: 1,
     borderTopWidth: 1,
     borderTopColor: theme.border,
-    backgroundColor: theme.background,
+    backgroundColor: theme.surfaceSoft,
   },
   gridContent: {
     paddingHorizontal: 20,
-    paddingTop: 18,
+    paddingTop: 16,
     paddingBottom: 28,
+  },
+  catalogHome: {
+    flex: 1,
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+  },
+  catalogHomeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  catalogHomeTitle: {
+    color: theme.textPrimary,
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  catalogHomeMeta: {
+    color: theme.textSecondary,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  catalogList: {
+    flex: 1,
+  },
+  catalogListContent: {
+    gap: 12,
+    paddingBottom: 18,
+  },
+  catalogBookCard: {
+    minHeight: 132,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: theme.border,
+    padding: 12,
+    backgroundColor: theme.surface,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+  },
+  catalogCoverStack: {
+    width: 112,
+    height: 108,
+    marginRight: 14,
+  },
+  catalogPreviewCover: {
+    position: 'absolute',
+    top: 0,
+    width: 70,
+    height: 94,
+    borderRadius: radii.md,
+    backgroundColor: theme.surfaceRaised,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 6,
+  },
+  catalogPreviewImage: {
+    width: 70,
+    height: 94,
+    borderRadius: radii.md,
+  },
+  catalogBookInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  catalogBookName: {
+    color: theme.textPrimary,
+    fontSize: 18,
+    fontWeight: '900',
+    marginBottom: 6,
+  },
+  catalogBookDesc: {
+    color: theme.textSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  catalogStatsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  catalogStatText: {
+    color: theme.textPrimary,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  catalogPercentPill: {
+    minWidth: 46,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    backgroundColor: theme.brandSoft,
+  },
+  catalogPercentText: {
+    color: theme.brand,
+    fontSize: 13,
+    fontWeight: '900',
   },
   emptyState: {
     alignItems: 'center',

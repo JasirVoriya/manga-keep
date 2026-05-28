@@ -9,6 +9,7 @@ import type { IssueRecordMap, OwnershipStatus, ComicIssue, ComicCatalog } from '
 import type { ThemeTokens } from '../styles/themes/types';
 import { useNavigation } from '@react-navigation/native';
 import { SegmentedControl } from '../components/SegmentedControl';
+import { BottomNavBar } from '../components/BottomNavBar';
 
 type FilterType = 'all' | 'wishlist_first';
 
@@ -142,6 +143,7 @@ export function ReplenishmentListScreen() {
           </Pressable>
         </View>
       )}
+      <BottomNavBar />
     </SafeAreaView>
   );
 }

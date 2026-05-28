@@ -7,7 +7,6 @@ import type { ThemeTokens } from '../styles/themes/types';
 import type { ComicIssue, IssueCondition, IssueRecord, OwnershipStatus } from '../types';
 import { CoverImage } from './CoverImage';
 import { SegmentedControl } from './SegmentedControl';
-import { StatusBadge } from './StatusBadge';
 
 type Props = {
   issue: ComicIssue | null;
@@ -19,17 +18,15 @@ type Props = {
 };
 
 const statusOptions: Array<{ label: string; value: OwnershipStatus }> = [
-  { label: '缺少', value: 'missing' },
   { label: '已有', value: 'owned' },
+  { label: '缺本', value: 'missing' },
   { label: '想要', value: 'wishlist' },
 ];
 
 const conditionOptions: Array<{ label: string; value: IssueCondition }> = [
-  { label: '未标记', value: 'ungraded' },
   { label: '全新', value: 'mint' },
   { label: '良好', value: 'good' },
   { label: '瑕疵', value: 'worn' },
-  { label: '重复', value: 'duplicate' },
 ];
 
 export function IssueDetailModal({ issue, record, catalogName, visible, onClose, onSave }: Props) {
@@ -42,7 +39,7 @@ export function IssueDetailModal({ issue, record, catalogName, visible, onClose,
 
   useEffect(() => {
     setStatus(record.status);
-    setCondition(record.condition);
+    setCondition(record.condition === 'good' || record.condition === 'worn' ? record.condition : 'mint');
     setNote(record.note);
   }, [record, visible]);
 
@@ -55,46 +52,55 @@ export function IssueDetailModal({ issue, record, catalogName, visible, onClose,
   }
 
   const isMissing = status === 'missing';
+  const statusLabel = status === 'owned' ? '已收藏' : status === 'missing' ? '缺本中' : '想要';
 
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <View style={styles.header}>
-            <Text style={styles.kicker}>第 {issue.number} 期</Text>
             <Pressable accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
               <MaterialCommunityIcons name="close" size={20} color={theme.textPrimary} />
             </Pressable>
+            <Text style={styles.kicker}>第 {issue.number} 期</Text>
+            <View style={styles.statusPill}>
+              <Text style={styles.statusPillText}>{statusLabel}</Text>
+            </View>
           </View>
 
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-            {/* 图文基础信息区 */}
-            <View style={styles.infoRow}>
-              <View style={styles.coverWrap}>
+            <View style={styles.detailIntro}>
+              <View style={styles.posterWrap}>
                 <CoverImage 
                   source={issue.cover as any}
                   uri={issue.coverUrl}
                   issueNumber={issue.number.toString()}
-                  style={[styles.cover, isMissing ? { opacity: 0.5 } : {}]}
+                  style={[styles.posterCover, isMissing ? { opacity: 0.55 } : {}]}
                 />
               </View>
-              <View style={styles.infoTextWrap}>
-                <Text style={styles.title} numberOfLines={2}>{issue.displayTitle}</Text>
-                <Text style={styles.catalogName} numberOfLines={1}>{catalogName}</Text>
-                <View style={styles.statusBadgeWrap}>
-                  <StatusBadge status={status as any} />
-                </View>
+
+              <View style={styles.infoCard}>
+                <MaterialCommunityIcons name="star-four-points-outline" size={18} color={theme.accent} style={styles.sparkleTop} />
+                <Text style={styles.infoLabel}>漫画标题：</Text>
+                <Text style={styles.infoValue} numberOfLines={2}>{issue.displayTitle}</Text>
+                <Text style={styles.infoLabel}>目录：</Text>
+                <Text style={styles.infoValueSmall} numberOfLines={1}>{catalogName}</Text>
+                <Text style={styles.infoLabel}>出版类型：</Text>
+                <Text style={styles.infoValueSmall}>{issue.label}</Text>
               </View>
             </View>
 
-            <View style={styles.divider} />
-
-            {/* 编辑区 */}
-            <Text style={styles.label}>收藏状态</Text>
+            <View style={styles.formHeaderRow}>
+              <Text style={styles.label}>状态</Text>
+              <MaterialCommunityIcons name="star-four-points-outline" size={18} color={theme.textSecondary} />
+            </View>
             <SegmentedControl options={statusOptions} value={status} onChange={setStatus} />
 
-            <View style={status === 'owned' ? styles.activeGroup : styles.inactiveGroup}>
+            <View style={styles.formHeaderRow}>
               <Text style={styles.label}>品相</Text>
+              <MaterialCommunityIcons name="star-four-points-outline" size={18} color={theme.textSecondary} />
+            </View>
+            <View style={status === 'owned' ? styles.activeGroup : styles.inactiveGroup}>
               <SegmentedControl options={conditionOptions} value={condition} onChange={setCondition} />
             </View>
 
@@ -103,7 +109,7 @@ export function IssueDetailModal({ issue, record, catalogName, visible, onClose,
               multiline
               value={note}
               onChangeText={setNote}
-              placeholder="记录品相、来源、缺件或求购提醒"
+              placeholder="在这里写下你的收藏备注..."
               placeholderTextColor={theme.textMuted}
               style={styles.note}
             />
@@ -117,7 +123,6 @@ export function IssueDetailModal({ issue, record, catalogName, visible, onClose,
               style={[styles.saveButton, !isModified && styles.saveButtonDisabled]}
               disabled={!isModified}
             >
-              <MaterialCommunityIcons name="content-save-check" size={18} color={isModified ? theme.textOnBrand : theme.textMuted} />
               <Text style={[styles.saveText, !isModified && styles.saveTextDisabled]}>保存</Text>
             </Pressable>
           </View>
@@ -130,117 +135,161 @@ export function IssueDetailModal({ issue, record, catalogName, visible, onClose,
 const getStyles = (theme: ThemeTokens) => StyleSheet.create({
   backdrop: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.44)',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(67, 38, 22, 0.28)',
+    paddingHorizontal: 16,
   },
   sheet: {
-    height: '90%',
+    height: '92%',
     width: '100%',
     maxWidth: 560,
     alignSelf: 'center',
-    borderTopLeftRadius: radii.md,
-    borderTopRightRadius: radii.md,
+    borderRadius: radii.xxl,
     borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: theme.borderStrong,
+    borderColor: theme.border,
     backgroundColor: theme.surface,
     overflow: 'hidden',
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 1,
+    shadowRadius: 28,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 14,
+    paddingHorizontal: 24,
+    paddingTop: 22,
+    paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: theme.border,
+    backgroundColor: theme.surfaceSoft,
   },
   kicker: {
-    color: theme.brand,
-    fontSize: 16,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    color: theme.textPrimary,
+    fontSize: 22,
     fontWeight: '900',
-    textTransform: 'uppercase',
   },
   closeButton: {
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radii.md,
+    borderRadius: 18,
     backgroundColor: theme.surfaceRaised,
+    zIndex: 1,
+  },
+  statusPill: {
+    minHeight: 34,
+    justifyContent: 'center',
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: theme.border,
+    paddingHorizontal: 16,
+    backgroundColor: theme.surfaceRaised,
+    zIndex: 1,
+  },
+  statusPillText: {
+    color: theme.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 18,
+    padding: 24,
     paddingBottom: 40,
   },
-  infoRow: {
+  detailIntro: {
     flexDirection: 'row',
+    gap: 24,
     alignItems: 'flex-start',
-    gap: 16,
+    marginBottom: 22,
   },
-  coverWrap: {
-    width: 100,
-    borderRadius: radii.sm,
-    shadowColor: theme.brand,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  cover: {
-    width: '100%',
-    height: undefined,
+  posterWrap: {
+    width: 128,
     aspectRatio: 3 / 4,
+    borderRadius: radii.xl,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 1,
+    shadowRadius: 20,
+    backgroundColor: theme.surfaceRaised,
   },
-  infoTextWrap: {
+  posterCover: {
+    width: '100%',
+    height: '100%',
+    borderRadius: radii.xl,
+  },
+  infoCard: {
     flex: 1,
+    minHeight: 172,
+    borderRadius: radii.xl,
+    padding: 18,
+    backgroundColor: theme.surfaceRaised,
   },
-  title: {
+  sparkleTop: {
+    position: 'absolute',
+    right: 14,
+    top: 12,
+  },
+  infoLabel: {
     color: theme.textPrimary,
-    fontSize: 22,
-    fontWeight: '900',
-    marginBottom: 6,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '500',
+    marginTop: 4,
   },
-  catalogName: {
-    color: theme.textSecondary,
-    fontSize: 14,
-    fontWeight: '700',
+  infoValue: {
+    color: theme.textPrimary,
+    fontSize: 19,
+    lineHeight: 24,
+    fontWeight: '900',
     marginBottom: 12,
   },
-  statusBadgeWrap: {
-    alignSelf: 'flex-start',
+  infoValueSmall: {
+    color: theme.textPrimary,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '900',
+    marginBottom: 12,
   },
-  divider: {
-    height: 1,
-    backgroundColor: theme.border,
-    marginVertical: 20,
+  formHeaderRow: {
+    minHeight: 34,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
   },
   activeGroup: {
     opacity: 1,
   },
   inactiveGroup: {
-    opacity: 0.4,
+    opacity: 1,
   },
   label: {
-    marginTop: 14,
+    marginTop: 12,
     marginBottom: 8,
     color: theme.textPrimary,
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '500',
   },
   note: {
-    minHeight: 86,
+    minHeight: 132,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: theme.borderStrong,
-    padding: 12,
+    padding: 16,
     color: theme.textPrimary,
     backgroundColor: theme.surfaceRaised,
     textAlignVertical: 'top',
+    fontSize: 16,
+    lineHeight: 22,
   },
   footer: {
     borderTopWidth: 1,
@@ -250,13 +299,17 @@ const getStyles = (theme: ThemeTokens) => StyleSheet.create({
     backgroundColor: theme.surface,
   },
   saveButton: {
-    height: 48,
+    height: 64,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: radii.md,
-    backgroundColor: theme.brand,
+    borderRadius: radii.xxl,
+    backgroundColor: theme.info,
+    shadowColor: theme.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
   },
   saveButtonDisabled: {
     backgroundColor: theme.surfaceRaised,
@@ -265,7 +318,7 @@ const getStyles = (theme: ThemeTokens) => StyleSheet.create({
   },
   saveText: {
     color: theme.textOnBrand,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '900',
   },
   saveTextDisabled: {

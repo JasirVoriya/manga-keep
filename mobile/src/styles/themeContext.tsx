@@ -1,11 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeTokens } from './themes/types';
-import { warmPaper } from './themes/warmPaper';
+import { minimalAnime } from './themes/minimalAnime';
 
-// We can add more themes here later
 export const THEMES: Record<string, ThemeTokens> = {
-  warmPaper,
+  minimalAnime,
 };
 
 const THEME_STORAGE_KEY = '@app_theme_name';
@@ -17,15 +16,15 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: warmPaper,
-  themeName: 'warmPaper',
+  theme: minimalAnime,
+  themeName: 'minimalAnime',
   setThemeName: () => {},
 });
 
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [themeName, setThemeNameState] = useState<string>('warmPaper');
+  const [themeName, setThemeNameState] = useState<string>('minimalAnime');
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -56,10 +55,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   if (!isReady) {
-    return null; // or a splash screen equivalent
+    return null;
   }
 
-  const theme = THEMES[themeName] || warmPaper;
+  const theme = THEMES[themeName] || minimalAnime;
 
   return (
     <ThemeContext.Provider value={{ theme, themeName, setThemeName }}>

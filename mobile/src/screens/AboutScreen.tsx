@@ -5,6 +5,7 @@ import { useTheme } from '../styles/themeContext';
 import { radii } from '../styles/constants';
 import type { ThemeTokens } from '../styles/themes/types';
 import { useNavigation } from '@react-navigation/native';
+import { BottomNavBar } from '../components/BottomNavBar';
 
 const APP_VERSION = '1.0.0 (Build 42)';
 
@@ -79,6 +80,7 @@ export function AboutScreen() {
       <View style={styles.footer}>
         <Text style={styles.copyright}>© 2026 MangaKeep</Text>
       </View>
+      <BottomNavBar />
     </SafeAreaView>
   );
 }

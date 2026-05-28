@@ -13,7 +13,7 @@ export const warmPaper: ThemeTokens = {
   // 文字层级
   textPrimary: '#3b1d12', // 墨色正文
   textSecondary: '#7c5d4a', // 弱说明文字
-  textMuted: '#a8a29e', // 禁用/辅助信息
+  textMuted: '#8b6a55', // 辅助信息，避免灰蒙蒙
   textOnBrand: '#ffffff',
   textOnAccent: '#ffffff',
 
@@ -28,8 +28,8 @@ export const warmPaper: ThemeTokens = {
   // 收藏状态
   owned: '#9a3412', // 已有 - 书架棕
   ownedSoft: 'rgba(154, 52, 18, 0.1)',
-  missing: '#a8a29e', // 缺本 - 暖灰
-  missingSoft: 'rgba(168, 162, 158, 0.1)',
+  missing: '#7c5d4a', // 缺本 - 暖棕，灰度只用于封面本身
+  missingSoft: 'rgba(124, 93, 74, 0.12)',
   wanted: '#f97316', // 想要 - 橙色
   wantedSoft: 'rgba(249, 115, 22, 0.1)',
   unmarked: 'transparent',
